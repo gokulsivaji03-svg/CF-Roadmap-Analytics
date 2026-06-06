@@ -1,248 +1,238 @@
-# CF Coach — Codeforces Training Platform
+# CF Coach
 
-A personalized competitive programming training platform that analyzes your Codeforces weaknesses, generates daily practice, tracks mistakes, and helps you climb from newbie to 1600+.
+CF Coach is a Codeforces training workspace built with Next.js, Prisma, and SQLite. It helps you sync a Codeforces handle, analyze weak areas, generate practice, track failed problems, and review them with an adaptive spaced-repetition loop.
 
-> **Built for beginner-to-intermediate Codeforces competitors who want structured, data-driven improvement.**
+This repository is currently set up for a single local guest user. There is no live sign-in flow in the app right now; the session layer always returns a built-in guest account so you can use the full product locally without authentication setup.
 
----
+## What the app does
 
-## Features
+- Syncs a Codeforces handle and stores profile data, contest history, submissions, and tag stats locally.
+- Shows a dashboard with rating progress, weakness signals, review health, roadmap progress, and recommended next actions.
+- Builds a daily practice plan from your rating band, weak tags, and recent problem history.
+- Lets you keep a problem journal with ideas tried, where you got stuck, hint usage, confidence, and takeaways.
+- Automatically turns failed journaled problems into review items.
+- Runs an adaptive review engine with outcomes like `Solved Easily`, `Solved With Effort`, `Needed Hint`, `Needed Editorial`, and `Still Stuck`.
+- Tracks recurring mistake patterns and surfaces review analytics such as retention score, editorial dependency, and rating readiness.
+- Creates lightweight timed contest simulations from Codeforces problem pools.
+- Provides a milestone roadmap for climbing Codeforces rating tiers.
+- Includes a Jiangly solution finder that locates accepted `jiangly` submissions for a Codeforces problem reference.
 
-### 1. Codeforces Profile Dashboard
-- Connect via Codeforces API using your handle
-- View rating, contests, solved problems, and progress over time
-- Tag-based strength/weakness analysis with accuracy percentages
-- Solve speed metrics and consistency tracking
+## Current product behavior
 
-### 2. Weakness Diagnosis Engine
-- Identifies which problem types you struggle with most
-- Detects patterns like overcomplicating, reading errors, math intuition gaps
-- Analyzes submissions to find recurring mistake categories
-- Lets you manually log why you failed a problem
+- Auth: guest-mode only. The app always behaves as an authenticated local user.
+- Database: Prisma with SQLite.
+- Theme: dark mode enabled by default, with a built-in light/dark toggle.
+- External data source: live Codeforces API calls.
+- Scope: optimized for local use and experimentation, not multi-user deployment in its current state.
 
-### 3. Daily Training Plan
-- Generates a personalized practice set based on your current rating
-- Prioritizes 800–1100 rated problems initially
-- Mixes review problems (spaced repetition) with new problems
-- Targets weak tags: math, greedy, implementation, brute force, constructive
+## Tech stack
 
-### 4. Problem Solving Journal
-- Log your initial idea, what you tried, where you got stuck
-- Track hints used, final insight, mistake category, and takeaway
-- Record whether you solved independently, time spent, confidence level
-- Expand/collapse entries for quick review
+- Next.js 14 App Router
+- React 18 + TypeScript
+- Tailwind CSS
+- Prisma ORM
+- SQLite
+- Recharts
+- Lucide React
+- `next-themes`
+- `react-hot-toast`
+- Zustand
 
-### 5. Mistake Review System (Spaced Repetition)
-- Failed problems enter a review queue: 1 day → 3 days → 7 days → 21 days
-- Mark problems as "Solved it!" to advance stages, or "Still stuck" to reset
-- View recurring mistake patterns across all your entries
-- Generate insights like "You overuse hash maps when only existence is needed"
+## Main sections
 
-### 6. Contest Simulation Mode
-- Timed practice contests with problems at your skill level
-- Track solved, attempted, failed, and skipped problems
-- Countdown timer and automatic scoring
-- Perfect for practicing under contest pressure
+### Dashboard
 
-### 7. Hint Ladder (via AI Coach)
-- Progressive hints: direction → key observation → formula → implementation
-- Full editorial summary as last resort
-- Encourages independent problem solving before revealing answers
+The dashboard pulls together:
 
-### 8. AI Coach (Chat Interface)
-- Ask the AI coach for hints, mistake analysis, and practice recommendations
-- Powered by OpenAI GPT-4o-mini (optional) with local fallback responses
-- Socratic questioning approach — coaches without giving full solutions
-- Suggest similar problems and create study plans
+- Codeforces profile summary
+- rating progression
+- tag accuracy and attempt difficulty breakdowns
+- today’s plan
+- due reviews
+- roadmap readiness
+- suggested next steps
 
-### 9. Roadmap System
-- 7 milestones: 800 → 900 → 1000 → 1200 → 1400 → 1600
-- Each milestone has required skills, tags, problem counts, and contest goals
-- Visual progress tracking with color-coded tiers
+### Daily Plan
 
-### 10. Jiangly Solution Finder
-- Find jiangly's accepted solutions for any Codeforces problem
-- Supports URLs or shorthand like `1527/A`
-- Scans up to 50,000 submissions to find matches
+The daily plan generator builds a practice set from:
 
----
+- your current rating
+- weak tags
+- recent solved history
+- configurable difficulty ranges
 
-## Tech Stack
+Problems are saved for the day and can be marked complete with time spent.
 
-| Layer | Technology |
-|-------|-----------|
-| **Frontend** | Next.js 14 (App Router), React 18, TypeScript |
-| **Styling** | Tailwind CSS 3, Dark mode support |
-| **Charts** | Recharts 2 |
-| **Icons** | Lucide React |
-| **Auth** | NextAuth.js 4 with GitHub OAuth |
-| **Database** | PostgreSQL via Prisma ORM |
-| **AI** | OpenAI API (optional), local fallback |
-| **Codeforces API** | Official Codeforces API integration |
+### Journal
 
----
+The journal is the reflection layer of the app. Each entry can store:
 
-## Getting Started
+- problem metadata
+- initial idea and what you tried
+- where you got stuck
+- hints used and final insight
+- one or more mistake categories
+- time spent, confidence, and independence
+
+If a problem was not solved independently, the app creates or refreshes a review schedule entry automatically.
+
+### Review Engine
+
+The review system is one of the richer parts of the project. It tracks:
+
+- stage-based spaced repetition
+- adaptive next-review intervals
+- retention, importance, and priority scores
+- repeated mistake categories
+- review attempt history
+- similar repair-problem recommendations
+
+There is also a separate review analytics page for higher-level trends.
+
+### Contest Simulation
+
+The contest page can generate a timed practice contest from Codeforces problems near the user’s rating. It tracks per-problem status and auto-finalizes once everything is done or the timer expires.
+
+### Weakness Analysis
+
+The weakness view summarizes:
+
+- tag-level accuracy
+- one-try solve rate
+- multiple-wrong-submission patterns
+- difficulty-band performance
+- journal-derived mistake trends
+
+### Roadmap
+
+The roadmap page maps current progress against milestone tiers and problem-count targets from beginner levels upward.
+
+### Jiangly Finder
+
+The Jiangly page accepts a Codeforces problem URL or shorthand like `1527/A`, scans `jiangly` submissions through the Codeforces API, and returns accepted matching submissions with metadata.
+
+## Project structure
+
+```text
+src/
+  app/
+    dashboard/            Main overview page
+    daily-plan/           Daily practice workflow
+    journal/              Problem journal
+    review/               Review queue
+    review/analytics/     Review analytics page
+    contest/              Contest simulation page
+    weakness/             Weakness analysis page
+    roadmap/              Rating roadmap
+    problems/             Jiangly solution finder
+    settings/             Codeforces sync and preferences
+    api/                  App API routes
+  components/
+    layout/               Navbar
+  lib/
+    cf-api.ts             Codeforces integration + helpers
+    daily-plan-generator.ts
+    review-engine.ts
+    roadmap.ts
+    mistake-patterns.ts
+    serialization.ts
+    session.ts
+prisma/
+  schema.prisma           Database schema
+  dev.db                  Local SQLite database
+server.mjs                Standalone Jiangly finder prototype/server
+```
+
+## Local setup
 
 ### Prerequisites
 
-- **Node.js 18+** (includes npm)
-- **PostgreSQL** database (local or cloud — Neon, Supabase, Railway)
-- **GitHub OAuth App** (for authentication)
-- **OpenAI API key** (optional, for AI coach)
+- Node.js 18+
+- npm
 
-### 1. Quick Setup
+### 1. Install dependencies
 
 ```bash
-# Clone and enter the project
-cd jiangly
-
-# Install dependencies
-npm install --legacy-peer-deps
-
-# Generate Prisma client
-npx prisma generate
-
-# Set up environment
-cp .env.example .env
+npm install
 ```
 
-### 2. Environment Variables
+`postinstall` runs `prisma generate` automatically.
 
-Edit `.env` with your settings:
+### 2. Configure environment
+
+The repo includes `.env.example`, but the app currently uses SQLite locally. Make sure `DATABASE_URL` matches the Prisma schema:
 
 ```env
-# PostgreSQL connection string
-DATABASE_URL="postgresql://user:password@localhost:5432/codeforces_coach?schema=public"
-
-# NextAuth
-NEXTAUTH_SECRET="generate-a-random-secret-here"
-NEXTAUTH_URL="http://localhost:3000"
-
-# GitHub OAuth (create at https://github.com/settings/developers)
-GITHUB_ID="your-github-oauth-app-id"
-GITHUB_SECRET="your-github-oauth-app-secret"
-
-# OpenAI (optional)
-OPENAI_API_KEY="sk-your-openai-api-key"
+DATABASE_URL="file:./dev.db"
 ```
 
-#### Setting up GitHub OAuth
+Notes:
 
-1. Go to GitHub Settings → Developer Settings → OAuth Apps → New OAuth App
-2. Set Homepage URL to `http://localhost:3000`
-3. Set Authorization callback URL to `http://localhost:3000/api/auth/callback/github`
-4. Copy the Client ID and Client Secret into `.env`
+- `NEXTAUTH_SECRET` and `NEXTAUTH_URL` can stay set for local development.
+- `GITHUB_ID`, `GITHUB_SECRET`, and `OPENAI_API_KEY` are legacy placeholders right now and are not required for the current guest-mode app flow.
 
-### 3. Database Setup
+### 3. Prepare the database
 
 ```bash
-# Push the schema to your database
 npx prisma db push
+```
 
-# (Optional) Open Prisma Studio to inspect data
+Optional:
+
+```bash
 npx prisma studio
 ```
 
-### 4. Start Development
+### 4. Start the app
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Then open `http://localhost:3000`.
 
----
+## Typical workflow
 
-## Project Structure
+1. Open the app and go to `Settings`.
+2. Enter a Codeforces handle and run sync.
+3. Review the dashboard and weakness analysis.
+4. Generate a daily plan.
+5. Log failed or partially solved problems in the journal.
+6. Work through the review queue over time.
+7. Use the roadmap and contest simulation pages to track progress.
 
-```
-jiangly/
-├── prisma/
-│   └── schema.prisma         # Database schema (14 models)
-├── src/
-│   ├── app/
-│   │   ├── layout.tsx        # Root layout
-│   │   ├── page.tsx          # Landing page
-│   │   ├── providers.tsx     # Auth + theme providers
-│   │   ├── globals.css        # Global styles + component classes
-│   │   ├── api/
-│   │   │   ├── auth/         # NextAuth authentication
-│   │   │   ├── cf/           # Codeforces API proxy
-│   │   │   │   ├── sync/     # Sync profile + submissions
-│   │   │   │   ├── analysis/ # Weakness analysis
-│   │   │   │   ├── jiangly/  # Jiangly solution finder
-│   │   │   │   └── problems/ # Problem fetching
-│   │   │   ├── journal/      # Journal CRUD
-│   │   │   ├── daily-plan/   # Daily plan CRUD
-│   │   │   ├── review/       # Review schedule CRUD
-│   │   │   ├── contest/      # Contest simulation CRUD
-│   │   │   ├── ai/           # AI coach chat
-│   │   │   └── roadmap/      # Roadmap data
-│   │   ├── dashboard/        # Main dashboard
-│   │   ├── daily-plan/       # Daily training plan
-│   │   ├── journal/          # Problem journal
-│   │   ├── review/           # Mistake review queue
-│   │   ├── contest/          # Contest simulation
-│   │   ├── weakness/         # Weakness analytics
-│   │   ├── roadmap/          # Milestone roadmap
-│   │   ├── ai-coach/         # AI coaching chat
-│   │   ├── settings/         # App settings
-│   │   └── problems/         # Jiangly solution finder
-│   ├── components/
-│   │   └── layout/
-│   │       └── navbar.tsx    # Navigation bar
-│   └── lib/
-│       ├── auth.ts           # NextAuth configuration
-│       ├── cf-api.ts         # Codeforces API + analysis
-│       ├── db.ts             # Prisma client singleton
-│       ├── daily-plan-generator.ts  # Plan generation logic
-│       ├── roadmap.ts        # Milestone definitions
-│       └── utils.ts          # Shared utilities + constants
-├── .env.example
-├── package.json
-├── tailwind.config.ts
-├── tsconfig.json
-└── next.config.js
+## API routes
+
+The project exposes app routes for:
+
+- `/api/cf/sync`
+- `/api/cf/analysis`
+- `/api/cf/problems`
+- `/api/cf/jiangly`
+- `/api/daily-plan`
+- `/api/journal`
+- `/api/review`
+- `/api/contest`
+- `/api/roadmap`
+- `/api/auth/session`
+
+## Important implementation notes
+
+- The session layer is intentionally mocked for local guest usage.
+- Codeforces sync currently imports up to the latest 2000 submissions for the selected handle.
+- The UI assumes network access to `codeforces.com/api`.
+- The repository still contains some older setup artifacts and placeholders from a previous direction; this README reflects the current code path rather than those older assumptions.
+
+## Scripts
+
+```bash
+npm run dev
+npm run build
+npm run start
+npm run db:push
+npm run db:studio
 ```
 
----
+## Status
 
-## Database Models
-
-| Model | Purpose |
-|-------|---------|
-| `User` | User accounts (NextAuth) |
-| `Account` | OAuth provider accounts |
-| `Session` | User sessions |
-| `CfProfile` | Codeforces profile data |
-| `CfSubmission` | Submission history |
-| `CfContest` | Contest rating changes |
-| `CfTagStat` | Per-tag accuracy stats |
-| `Problem` | Cached problem data |
-| `JournalEntry` | Problem solving journal |
-| `ReviewSchedule` | Spaced repetition queue |
-| `DailyPlan` | Daily training plans |
-| `DailyPlanItem` | Problems in a plan |
-| `ContestSimulation` | Contest practice sessions |
-| `ContestProblem` | Problems in a contest sim |
-| `AIConversation` | AI coach chat history |
-| `MistakePattern` | Detected mistake patterns |
-
----
-
-## Development Philosophy
-
-This app is **not just a stats tracker**. It's designed to be a serious competitive programming coach:
-
-- **Diagnose first** — Understand why you fail before prescribing practice
-- **Spaced repetition** — Review failures at optimal intervals (1d, 3d, 7d, 21d)
-- **Journal everything** — Active recall strengthens learning
-- **AI as coach, not answer machine** — The AI uses Socratic questioning
-- **Progressive overload** — Milestones from 800 to 1600 with clear requirements
-
----
-
-## License
-
-MIT
+This codebase already has a substantial end-to-end local workflow: sync, analyze, plan, journal, review, simulate contests, and inspect progress. The biggest current simplification is authentication: everything runs as one local guest user instead of a real multi-user sign-in system.
