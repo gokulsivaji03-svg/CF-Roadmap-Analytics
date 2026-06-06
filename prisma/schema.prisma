@@ -1,0 +1,341 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String   @id @default(cuid())
+  name          String?
+  email         String?  @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  accounts     Account[]
+  sessions     Session[]
+  cfProfile    CfProfile?
+  journals     JournalEntry[]
+  reviews      ReviewSchedule[]
+  reviewAttempts ReviewAttempt[]
+  dailyPlans   DailyPlan[]
+  contestSims  ContestSimulation[]
+}
+
+model CfProfile {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  handle        String   @unique
+  rating        Int      @default(0)
+  maxRating     Int      @default(0)
+  rank          String   @default("newbie")
+  maxRank       String   @default("newbie")
+  avatar        String?
+  contribution  Int      @default(0)
+  friendOfCount Int      @default(0)
+  lastSync      DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user        User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  submissions CfSubmission[]
+  contests    CfContest[]
+  tagStats    CfTagStat[]
+}
+
+model CfSubmission {
+  id              String   @id @default(cuid())
+  cfProfileId     String
+  cfSubmissionId  Int      @unique
+  contestId       Int?
+  problemIndex    String?
+  problemName     String?
+  problemRating   Int?
+  problemTags     String
+  verdict         String
+  programmingLang String
+  timeConsumed    Int
+  memoryConsumed  Int
+  creationTime    DateTime
+  testCount       Int?
+
+  cfProfile CfProfile @relation(fields: [cfProfileId], references: [id], onDelete: Cascade)
+}
+
+model CfContest {
+  id            String   @id @default(cuid())
+  cfProfileId   String
+  contestId     Int
+  contestName   String?
+  rank          Int?
+  oldRating     Int
+  newRating     Int
+  ratingChange  Int
+  contestType   String?
+  solvedCount   Int?
+  creationTime  DateTime
+
+  cfProfile CfProfile @relation(fields: [cfProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([cfProfileId, contestId])
+}
+
+model CfTagStat {
+  id          String @id @default(cuid())
+  cfProfileId String
+  tag         String
+  solvedCount Int    @default(0)
+  attemptedCount Int @default(0)
+  avgRating   Float  @default(0)
+  accuracy    Float  @default(0)
+  totalTimeMs BigInt @default(0)
+
+  cfProfile CfProfile @relation(fields: [cfProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([cfProfileId, tag])
+}
+
+model Problem {
+  id        String   @id @default(cuid())
+  contestId Int
+  index     String
+  name      String?
+  rating    Int?
+  tags      String
+  solvedCount Int?
+  cfUrl     String?
+
+  journalEntries JournalEntry[]
+  reviewSchedule ReviewSchedule[]
+  dailyPlanItems DailyPlanItem[]
+  contestProblems ContestProblem[]
+
+  @@unique([contestId, index])
+}
+
+model JournalEntry {
+  id              String   @id @default(cuid())
+  userId          String
+  problemId       String?
+  cfContestId     Int?
+  cfProblemIndex  String?
+  problemName     String?
+  problemRating   Int?
+  problemTags     String
+  problemUrl      String?
+
+  // What the user logged
+  initialIdea     String?
+  whatTried       String?
+  whereGotStuck   String?
+  hintsUsed       String?
+  finalInsight    String?
+  mistakeCategory String?
+  mistakeCategories String @default("[]")
+  takeaway        String?
+  solvedIndependently  Boolean @default(false)
+  timeSpent       Int?
+  confidenceLevel Int?
+  attemptCount    Int      @default(1)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problem Problem? @relation(fields: [problemId], references: [id])
+  reviews  ReviewSchedule[]
+}
+
+model ReviewSchedule {
+  id        String   @id @default(cuid())
+  userId    String
+  problemId String?
+  journalEntryId String?
+
+  problemContestId   Int?
+  problemIndex       String?
+  problemName        String?
+  problemRating      Int?
+  problemTags        String
+  problemUrl         String?
+  mistakeCategory    String?
+  mistakeCategories  String   @default("[]")
+  originalUserRating Int?
+  currentUserRatingSnapshot Int?
+  latestProblemRating Int?
+  reviewMode         String?
+  similarProblemRecommendations String @default("[]")
+
+  stage           Int      @default(0) // 0=1d, 1=3d, 2=7d, 3=21d
+  nextReviewAt    DateTime
+  nextIntervalDays Int     @default(1)
+  lastReviewedAt  DateTime?
+  reviewCount     Int      @default(0)
+  successCount    Int      @default(0)
+  failureCount    Int      @default(0)
+  solvedEasilyCount Int    @default(0)
+  solvedWithEffortCount Int @default(0)
+  neededHintCount Int      @default(0)
+  neededEditorialCount Int @default(0)
+  stillStuckCount Int      @default(0)
+  overdueCount    Int      @default(0)
+  maxStageReached Int      @default(0)
+  retentionScore  Float    @default(0)
+  importanceScore Float    @default(0)
+  priorityScore   Float    @default(0)
+  isCompleted     Boolean  @default(false)
+  isDismissed     Boolean  @default(false)
+  masteredAt      DateTime?
+  dismissedAt     DateTime?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problem Problem? @relation(fields: [problemId], references: [id])
+  journalEntry JournalEntry? @relation(fields: [journalEntryId], references: [id], onDelete: SetNull)
+  attempts ReviewAttempt[]
+
+  @@index([userId, isCompleted, isDismissed, nextReviewAt])
+  @@index([userId, priorityScore])
+  @@index([userId, problemContestId, problemIndex])
+}
+
+model DailyPlan {
+  id          String   @id @default(cuid())
+  userId      String
+  date        DateTime
+  isCompleted Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  user  User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items DailyPlanItem[]
+
+  @@unique([userId, date])
+}
+
+model DailyPlanItem {
+  id          String  @id @default(cuid())
+  dailyPlanId String
+  problemId   String?
+
+  problemContestId  Int?
+  problemIndex      String?
+  problemName       String?
+  problemRating     Int?
+  problemTags       String
+  problemUrl        String?
+
+  itemType    String  @default("practice") // practice, review, contest_sim
+  isCompleted Boolean @default(false)
+  timeSpent   Int?
+  notes       String?
+  sortOrder   Int     @default(0)
+
+  dailyPlan DailyPlan @relation(fields: [dailyPlanId], references: [id], onDelete: Cascade)
+  problem   Problem?  @relation(fields: [problemId], references: [id])
+}
+
+model ContestSimulation {
+  id            String   @id @default(cuid())
+  userId        String
+  name          String?
+  contestId     Int?
+  difficulty    String   @default("800-1100")
+  problemCount  Int      @default(5)
+  durationMins  Int      @default(120)
+  startedAt     DateTime @default(now())
+  completedAt   DateTime?
+  score         Int      @default(0)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problems  ContestProblem[]
+}
+
+model ContestProblem {
+  id                  String  @id @default(cuid())
+  contestSimId        String
+  problemId           String?
+
+  problemContestId    Int?
+  problemIndex        String?
+  problemName         String?
+  problemRating       Int?
+  problemTags         String
+  problemUrl          String?
+
+  status              String  @default("pending") // pending, solved, attempted, failed, skipped
+  timeSpent           Int?
+  hintsUsed           Int      @default(0)
+  solvedIndependently Boolean @default(false)
+
+  contestSim ContestSimulation @relation(fields: [contestSimId], references: [id], onDelete: Cascade)
+  problem    Problem?          @relation(fields: [problemId], references: [id])
+}
+
+model MistakePattern {
+  id        String   @id @default(cuid())
+  userId    String
+  pattern   String
+  count     Int      @default(1)
+  examples  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ReviewAttempt {
+  id               String   @id @default(cuid())
+  reviewScheduleId String
+  userId           String
+  outcome          String
+  confidence       Int?
+  userRatingSnapshot Int?
+  scheduledStage   Int
+  resultingStage   Int
+  wasSuccessful    Boolean
+  intervalDays     Int
+  retentionScoreAfter Float?
+  priorityScoreAfter Float?
+  mistakeCategories String @default("[]")
+  notes            String?
+  createdAt        DateTime @default(now())
+
+  reviewSchedule ReviewSchedule @relation(fields: [reviewScheduleId], references: [id], onDelete: Cascade)
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([reviewScheduleId, createdAt])
+  @@index([userId, createdAt])
+}
