@@ -2,6 +2,20 @@ import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+// NextAuth v4 requires a secret in production. Middleware runs on Edge,
+// so we resolve it inline instead of importing the full auth module.
+function getAuthSecret(): string {
+  const secret = process.env.NEXTAUTH_SECRET;
+  if (
+    !secret ||
+    secret.startsWith("replace-with") ||
+    secret.startsWith("change-this")
+  ) {
+    return "dev-secret-do-not-use-in-production";
+  }
+  return secret;
+}
+
 // Paths that require authentication
 const PROTECTED_PATHS = [
   "/dashboard",
@@ -24,12 +38,7 @@ const PROTECTED_PATHS = [
 ];
 
 // Paths that must never be blocked
-const PUBLIC_PATH_PREFIXES = [
-  "/api/auth",
-  "/_next",
-  "/favicon.ico",
-  "/guest",
-];
+const PUBLIC_PATH_PREFIXES = ["/api/auth", "/_next", "/favicon.ico", "/guest"];
 
 function isProtected(pathname: string): boolean {
   return PROTECTED_PATHS.some(
@@ -60,7 +69,7 @@ export async function middleware(req: NextRequest) {
 
   const token = await getToken({
     req,
-    secret: process.env.NEXTAUTH_SECRET,
+    secret: getAuthSecret(),
   });
 
   // Redirect unauthenticated users to the landing page with a callback

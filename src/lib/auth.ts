@@ -7,6 +7,33 @@ import { prisma } from "@/lib/db";
 const providers: NextAuthOptions["providers"] = [];
 const useDatabaseSessions = Boolean(process.env.DATABASE_URL);
 
+// NextAuth v4 requires a non-empty secret in production.
+// Vercel: set NEXTAUTH_SECRET in your project dashboard.
+function resolveAuthSecret(): string {
+  const secret = process.env.NEXTAUTH_SECRET;
+
+  if (
+    !secret ||
+    secret.startsWith("replace-with") ||
+    secret.startsWith("change-this")
+  ) {
+    // On Vercel at runtime (not build): throw a clear error
+    if (
+      process.env.VERCEL &&
+      process.env.NEXT_PHASE !== "phase-production-build"
+    ) {
+      throw new Error(
+        "NEXTAUTH_SECRET is missing or is a placeholder. " +
+          "Set a real secret in your Vercel project environment variables.",
+      );
+    }
+    // Dev or build: use a fallback so the app doesn't crash at build time
+    return secret || "dev-secret-do-not-use-in-production";
+  }
+
+  return secret;
+}
+
 function normalizeEmail(email: unknown) {
   return typeof email === "string" ? email.trim().toLowerCase() : "";
 }
@@ -18,7 +45,10 @@ async function hasVerifiedOAuthEmail(
   accessToken: string | null | undefined,
 ) {
   if (provider === "google") {
-    return profile?.email_verified === true && normalizeEmail(profile.email) === email;
+    return (
+      profile?.email_verified === true &&
+      normalizeEmail(profile.email) === email
+    );
   }
 
   if (provider === "github" && accessToken) {
@@ -152,6 +182,7 @@ if (process.env.GITHUB_ID && process.env.GITHUB_SECRET) {
 }
 
 export const authOptions: NextAuthOptions = {
+  secret: resolveAuthSecret(),
   adapter: useDatabaseSessions ? PrismaAdapter(prisma) : undefined,
   providers,
   pages: {
@@ -201,7 +232,8 @@ export const authOptions: NextAuthOptions = {
         session.user.email = user?.email ?? token.email ?? null;
         session.user.name = user?.name ?? token.name ?? null;
         session.user.image =
-          user?.image ?? (typeof token.picture === "string" ? token.picture : null);
+          user?.image ??
+          (typeof token.picture === "string" ? token.picture : null);
       }
 
       return session;
