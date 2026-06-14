@@ -1,6 +1,7 @@
 "use client";
 
 import { useSession } from "@/app/providers";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import {
@@ -74,6 +75,7 @@ type FormState = typeof emptyForm;
 
 export default function JournalPage() {
   const { data: session } = useSession();
+  const searchParams = useSearchParams();
 
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -92,6 +94,34 @@ export default function JournalPage() {
     fetchEntries();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]);
+
+  useEffect(() => {
+    const shouldOpenForm = searchParams.get("openForm") === "1";
+    const hasPrefillData =
+      shouldOpenForm ||
+      [
+        "cfContestId",
+        "cfProblemIndex",
+        "problemName",
+        "problemRating",
+        "problemTags",
+        "problemUrl",
+      ].some((key) => searchParams.get(key));
+
+    if (!hasPrefillData) return;
+
+    setForm((prev) => ({
+      ...prev,
+      cfContestId: searchParams.get("cfContestId") ?? prev.cfContestId,
+      cfProblemIndex:
+        searchParams.get("cfProblemIndex") ?? prev.cfProblemIndex,
+      problemName: searchParams.get("problemName") ?? prev.problemName,
+      problemRating: searchParams.get("problemRating") ?? prev.problemRating,
+      problemTags: searchParams.get("problemTags") ?? prev.problemTags,
+      problemUrl: searchParams.get("problemUrl") ?? prev.problemUrl,
+    }));
+    setShowForm(true);
+  }, [searchParams]);
 
   async function fetchEntries() {
     setLoading(true);

@@ -1,19 +1,19 @@
 "use client";
 
 import { useSession } from "@/app/providers";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import {
+  BookOpen,
   CheckCircle,
   Circle,
-  Clock,
   ExternalLink,
   Loader2,
   RefreshCw,
   Sparkles,
   Target,
-  Timer,
 } from "lucide-react";
 
 // ── Types ──────────────────────────────────────────────────────────
@@ -231,14 +231,31 @@ function buildPlanItems(
   }));
 }
 
-/** Format seconds into mm:ss or h:mm:ss. */
-function formatTime(totalSeconds: number): string {
-  const h = Math.floor(totalSeconds / 3600);
-  const m = Math.floor((totalSeconds % 3600) / 60);
-  const s = totalSeconds % 60;
-  if (h > 0)
-    return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-  return `${m}:${String(s).padStart(2, "0")}`;
+function buildJournalHref(item: PlanItem): string {
+  const params = new URLSearchParams();
+
+  params.set("openForm", "1");
+
+  if (item.problemContestId != null) {
+    params.set("cfContestId", String(item.problemContestId));
+  }
+  if (item.problemIndex) {
+    params.set("cfProblemIndex", item.problemIndex);
+  }
+  if (item.problemName) {
+    params.set("problemName", item.problemName);
+  }
+  if (item.problemRating != null) {
+    params.set("problemRating", String(item.problemRating));
+  }
+  if (item.problemUrl) {
+    params.set("problemUrl", item.problemUrl);
+  }
+  if (item.problemTags.length > 0) {
+    params.set("problemTags", item.problemTags.join(", "));
+  }
+
+  return `/journal?${params.toString()}`;
 }
 
 const AGGRESSIVE_MODE_STORAGE_KEY = "daily-plan-aggressive-mode";
@@ -259,12 +276,6 @@ export default function DailyPlanPage() {
 
     return window.localStorage.getItem(AGGRESSIVE_MODE_STORAGE_KEY) === "true";
   });
-
-  // Timer state per item
-  const [activeTimers, setActiveTimers] = useState<Record<string, number>>({});
-  const [timerIntervals, setTimerIntervals] = useState<
-    Record<string, ReturnType<typeof setInterval>>
-  >({});
 
   // ── Auth redirect ────────────────────────────────────────────────
 
@@ -377,67 +388,6 @@ export default function DailyPlanPage() {
       toast.error("Failed to update problem status");
     }
   }
-
-  function startTimer(itemId: string) {
-    if (timerIntervals[itemId]) return;
-    setActiveTimers((prev) => ({ ...prev, [itemId]: prev[itemId] ?? 0 }));
-
-    const interval = setInterval(() => {
-      setActiveTimers((prev) => ({
-        ...prev,
-        [itemId]: (prev[itemId] ?? 0) + 1,
-      }));
-    }, 1000);
-
-    setTimerIntervals((prev) => ({ ...prev, [itemId]: interval }));
-  }
-
-  function stopTimer(itemId: string) {
-    const interval = timerIntervals[itemId];
-    if (interval) {
-      clearInterval(interval);
-      setTimerIntervals((prev) => {
-        const next = { ...prev };
-        delete next[itemId];
-        return next;
-      });
-    }
-
-    const elapsed = activeTimers[itemId] ?? 0;
-    if (elapsed > 0) {
-      saveTimeSpent(itemId, elapsed);
-    }
-  }
-
-  function toggleTimer(itemId: string) {
-    if (timerIntervals[itemId]) {
-      stopTimer(itemId);
-    } else {
-      startTimer(itemId);
-    }
-  }
-
-  async function saveTimeSpent(itemId: string, seconds: number) {
-    try {
-      await fetch("/api/daily-plan", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ itemId, timeSpent: seconds }),
-      });
-    } catch {
-      // Silently fail – time is ephemeral
-    }
-  }
-
-  // Cleanup intervals on unmount
-  useEffect(() => {
-    return () => {
-      for (const interval of Object.values(timerIntervals)) {
-        clearInterval(interval);
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // ── Loading state ────────────────────────────────────────────────
 
@@ -601,9 +551,6 @@ export default function DailyPlanPage() {
       {/* Problem cards */}
       <div className="space-y-4">
         {plan.items.map((item) => {
-          const isActive = !!timerIntervals[item.id];
-          const elapsedSeconds = activeTimers[item.id] ?? 0;
-          const totalTimeSeconds = (item.timeSpent ?? 0) + elapsedSeconds;
           const visibleReasonLabels = getVisibleReasonLabels(item.reasonLabels);
 
           return (
@@ -678,18 +625,13 @@ export default function DailyPlanPage() {
                       </a>
                     )}
 
-                    {/* Timer */}
-                    <button
-                      onClick={() => toggleTimer(item.id)}
-                      className={`btn-ghost text-xs inline-flex items-center gap-1 ${
-                        isActive ? "text-blue-600 dark:text-blue-400" : ""
-                      }`}
+                    <Link
+                      href={buildJournalHref(item)}
+                      className="btn-ghost text-xs inline-flex items-center gap-1"
                     >
-                      <Timer className="w-3.5 h-3.5" />
-                      {totalTimeSeconds > 0
-                        ? formatTime(totalTimeSeconds)
-                        : "Start Timer"}
-                    </button>
+                      <BookOpen className="w-3.5 h-3.5" />
+                      Add to Journal
+                    </Link>
                   </div>
                 </div>
 
