@@ -1,6 +1,6 @@
 # CF Coach
 
-CF Coach is a Codeforces training workspace built with Next.js, Prisma, and SQLite. Users sign in with Google or GitHub, connect a Codeforces handle, sync public Codeforces data, and get personalized recommendations, roadmap progress, and review queues.
+CF Coach is a Codeforces training workspace built with Next.js, Prisma, and PostgreSQL. Users sign in with Google or GitHub, connect a Codeforces handle, sync public Codeforces data, and get personalized recommendations, roadmap progress, and review queues.
 
 ## What the app does
 
@@ -19,7 +19,7 @@ CF Coach is a Codeforces training workspace built with Next.js, Prisma, and SQLi
 
 - Auth: Google or GitHub login through NextAuth.js v4.
 - Codeforces connection: users enter their Codeforces handle in Settings, then sync via the public Codeforces API.
-- Database: Prisma with SQLite in the current schema.
+- Database: Prisma with PostgreSQL (local or Neon for Vercel).
 - Theme: dark mode enabled by default, with a built-in light/dark toggle.
 - External data source: live Codeforces API calls.
 
@@ -29,7 +29,7 @@ CF Coach is a Codeforces training workspace built with Next.js, Prisma, and SQLi
 - React 18 + TypeScript
 - Tailwind CSS
 - Prisma ORM
-- SQLite
+- PostgreSQL (Neon recommended for Vercel)
 - Recharts
 - Lucide React
 - `next-themes`
@@ -137,7 +137,7 @@ src/
     session.ts
 prisma/
   schema.prisma           Database schema
-  dev.db                  Local SQLite database
+  schema.prisma           PostgreSQL schema
 server.mjs                Standalone Jiangly finder prototype/server
 ```
 
@@ -158,10 +158,11 @@ npm install
 
 ### 2. Configure environment
 
-Copy `.env.example` to `.env` and make sure `DATABASE_URL` matches the Prisma schema:
+Copy `.env.example` to `.env` and fill in the values. For local PostgreSQL:
 
 ```env
-DATABASE_URL="file:./dev.db"
+DATABASE_URL="postgresql://postgres:password@localhost:5432/cf-coach"
+DIRECT_DATABASE_URL="postgresql://postgres:password@localhost:5432/cf-coach"
 NEXTAUTH_SECRET="replace-with-a-random-secret"
 NEXTAUTH_URL="http://localhost:3000"
 GOOGLE_CLIENT_ID=""
@@ -169,13 +170,14 @@ GOOGLE_CLIENT_SECRET=""
 GITHUB_ID=""
 GITHUB_SECRET=""
 OPENAI_API_KEY=""
-CODEFORCES_API_KEY=""
-CODEFORCES_API_SECRET=""
+
 ```
 
 Notes:
 
-- `NEXTAUTH_URL` must match the port the app is actually running on locally. If Next starts on `3001`, update `NEXTAUTH_URL` and your OAuth callback URLs to `http://localhost:3001`.
+- `DATABASE_URL` must point to a PostgreSQL database. For Vercel, use a Neon pooled connection string.
+- `DIRECT_DATABASE_URL` is used by Prisma CLI for migrations (non-pooled).
+- `NEXTAUTH_URL` must match the port the app is actually running on. Use `npm run dev -- -p 3000` to pin the port.
 - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are required to sign in with Google.
 - `GITHUB_ID` and `GITHUB_SECRET` are required to sign in with GitHub.
 - `OPENAI_API_KEY` is optional.
