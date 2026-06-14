@@ -58,7 +58,6 @@ model User {
   reviews      ReviewSchedule[]
   reviewAttempts ReviewAttempt[]
   dailyPlans   DailyPlan[]
-  contestSims  ContestSimulation[]
 }
 
 model CfProfile {
@@ -151,7 +150,6 @@ model Problem {
   journalEntries JournalEntry[]
   reviewSchedule ReviewSchedule[]
   dailyPlanItems DailyPlanItem[]
-  contestProblems ContestProblem[]
 
   @@unique([contestId, index])
 }
@@ -277,45 +275,6 @@ model DailyPlanItem {
 
   dailyPlan DailyPlan @relation(fields: [dailyPlanId], references: [id], onDelete: Cascade)
   problem   Problem?  @relation(fields: [problemId], references: [id])
-}
-
-model ContestSimulation {
-  id            String   @id @default(cuid())
-  userId        String
-  name          String?
-  contestId     Int?
-  difficulty    String   @default("800-1100")
-  problemCount  Int      @default(5)
-  durationMins  Int      @default(120)
-  startedAt     DateTime @default(now())
-  completedAt   DateTime?
-  score         Int      @default(0)
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-
-  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  problems  ContestProblem[]
-}
-
-model ContestProblem {
-  id                  String  @id @default(cuid())
-  contestSimId        String
-  problemId           String?
-
-  problemContestId    Int?
-  problemIndex        String?
-  problemName         String?
-  problemRating       Int?
-  problemTags         String
-  problemUrl          String?
-
-  status              String  @default("pending") // pending, solved, attempted, failed, skipped
-  timeSpent           Int?
-  hintsUsed           Int      @default(0)
-  solvedIndependently Boolean @default(false)
-
-  contestSim ContestSimulation @relation(fields: [contestSimId], references: [id], onDelete: Cascade)
-  problem    Problem?          @relation(fields: [problemId], references: [id])
 }
 
 model MistakePattern {

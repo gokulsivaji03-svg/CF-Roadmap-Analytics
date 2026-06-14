@@ -8,8 +8,6 @@ const PROTECTED_PATHS = [
   "/daily-plan",
   "/journal",
   "/review",
-  "/contest",
-  "/weakness",
   "/roadmap",
   "/problems",
   "/settings",
@@ -19,7 +17,6 @@ const PROTECTED_PATHS = [
   "/api/daily-plan",
   "/api/journal",
   "/api/review",
-  "/api/contest",
   "/api/roadmap",
 ];
 

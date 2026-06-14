@@ -440,36 +440,3 @@ export async function generateDailyPlan(config: DailyPlanConfig) {
     })),
   };
 }
-
-export async function generateContestSimulation(
-  rating: number,
-  count = 5,
-  weakTags: string[] = [],
-) {
-  const profile = buildDifficultyProfile(rating, true);
-  const problems = await fetchProblemsFromCF(
-    [],
-    profile.consistencyRange.min,
-    profile.growthRange.max,
-  );
-
-  const selected = buildPlanItems(problems, weakTags, profile, {
-    aggressive: true,
-    targetCount: count,
-  }).map((problem, index) => ({
-    contestId: problem.contestId,
-    index: problem.index,
-    name: problem.name,
-    rating: problem.rating,
-    tags: problem.tags,
-    cfUrl: problem.cfUrl,
-    sortOrder: index,
-    status: "pending" as const,
-  }));
-
-  return {
-    problems: selected,
-    durationMins: count * 24,
-    difficulty: `${profile.consistencyRange.min}-${profile.growthRange.max}`,
-  };
-}

@@ -72,15 +72,6 @@ export function normalizeReviewItem<T extends { problemTags: unknown }>(
   };
 }
 
-export function normalizeContestProblem<T extends { problemTags: unknown }>(
-  problem: T,
-): T & { problemTags: string[] } {
-  return {
-    ...problem,
-    problemTags: parseStringArray(problem.problemTags),
-  } as T & { problemTags: string[] };
-}
-
 export function normalizeDailyPlan<T extends { items: Array<{ problemTags: unknown }> }>(
   plan: T,
 ): T & { items: Array<T["items"][number] & { problemTags: string[] }> } {
