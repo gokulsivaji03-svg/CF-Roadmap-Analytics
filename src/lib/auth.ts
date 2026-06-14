@@ -154,6 +154,15 @@ if (process.env.GITHUB_ID && process.env.GITHUB_SECRET) {
   );
 }
 
+// Warn in dev if NEXTAUTH_SECRET is missing — auth will fail at runtime.
+if (!process.env.NEXTAUTH_SECRET) {
+  if (process.env.NODE_ENV !== "production") {
+    console.warn(
+      "[CF Coach] NEXTAUTH_SECRET is not set. Auth will not work. Generate one with: openssl rand -base64 32",
+    );
+  }
+}
+
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   adapter: useDatabaseSessions ? PrismaAdapter(prisma) : undefined,

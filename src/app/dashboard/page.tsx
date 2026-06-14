@@ -318,8 +318,9 @@ function calculateReadinessScore(
   const mistakePenalty =
     Math.min(
       0.12,
-      analysis.mistakes.slice(0, 3).reduce((sum, mistake) => sum + mistake.count, 0) *
-        0.01,
+      analysis.mistakes
+        .slice(0, 3)
+        .reduce((sum, mistake) => sum + mistake.count, 0) * 0.01,
     ) || 0;
 
   // Keep this linear and inspectable:
@@ -339,12 +340,16 @@ function buildReadinessLadder(
   review: ReviewData | null,
   roadmap: RoadmapData | null,
 ): ReadinessBucket[] {
-  const currentRating = analysis.profile.rating || roadmap?.currentRating || 800;
+  const currentRating =
+    analysis.profile.rating || roadmap?.currentRating || 800;
   const startBucket = Math.max(
     800,
     Math.floor((Math.max(currentRating, 800) - 150) / 100) * 100,
   );
-  const bucketRatings = Array.from({ length: 4 }, (_, index) => startBucket + index * 100);
+  const bucketRatings = Array.from(
+    { length: 4 },
+    (_, index) => startBucket + index * 100,
+  );
   const globalAccuracy = getGlobalAccuracy(analysis.tagStats);
   const reviewSuccess = review?.dashboard?.reviewSuccessRate ?? 0.55;
   const retention = (review?.dashboard?.retentionScore ?? 55) / 100;
@@ -446,7 +451,8 @@ function getTopBlockers(
     .sort((a, b) => b.score - a.score)
     .filter(
       (blocker, index, all) =>
-        all.findIndex((candidate) => candidate.title === blocker.title) === index,
+        all.findIndex((candidate) => candidate.title === blocker.title) ===
+        index,
     )
     .slice(0, 3);
 }
@@ -455,7 +461,8 @@ function getNextDashboardAction(
   plan: DailyPlan | null,
   review: ReviewData | null,
 ): NextDashboardAction {
-  const dueCount = review?.dashboard?.queueSummary.dueCount ?? review?.due.length ?? 0;
+  const dueCount =
+    review?.dashboard?.queueSummary.dueCount ?? review?.due.length ?? 0;
   const progress = getDailyPlanProgress(plan);
 
   if (dueCount > 0) {
@@ -506,7 +513,9 @@ function getRecommendedProblem(
   if (incompleteItems.length > 0) {
     const chosen =
       incompleteItems.find((item) =>
-        item.problemTags.some((tag) => blockerTitles.includes(tag.toLowerCase())),
+        item.problemTags.some((tag) =>
+          blockerTitles.includes(tag.toLowerCase()),
+        ),
       ) ?? incompleteItems[0];
     const rating = chosen.problemRating;
 
@@ -514,10 +523,15 @@ function getRecommendedProblem(
     if (chosen.itemType === "review") {
       reason = "Review-reinforcement problem";
     } else if (
-      chosen.problemTags.some((tag) => blockerTitles.includes(tag.toLowerCase()))
+      chosen.problemTags.some((tag) =>
+        blockerTitles.includes(tag.toLowerCase()),
+      )
     ) {
       reason = "Matches weakest tag";
-    } else if (rating != null && rating >= Math.max(currentRating + 100, readyFor - 100)) {
+    } else if (
+      rating != null &&
+      rating >= Math.max(currentRating + 100, readyFor - 100)
+    ) {
       reason = "Stretch problem for rating growth";
     }
 
@@ -608,7 +622,8 @@ function getRecentWins(
     });
   }
 
-  const dueCount = review?.dashboard?.queueSummary.dueCount ?? review?.due.length ?? 0;
+  const dueCount =
+    review?.dashboard?.queueSummary.dueCount ?? review?.due.length ?? 0;
   if ((review?.all.length ?? 0) > 0 && dueCount === 0) {
     wins.push({
       id: "queue-clear",
@@ -673,11 +688,12 @@ export default function DashboardPage() {
       const analysis = (await analysisRes.json()) as AnalysisData;
       setNeedsSync(false);
 
-      const [planResult, reviewResult, roadmapResult] = await Promise.allSettled([
-        fetch("/api/daily-plan"),
-        fetch("/api/review"),
-        fetch("/api/roadmap"),
-      ]);
+      const [planResult, reviewResult, roadmapResult] =
+        await Promise.allSettled([
+          fetch("/api/daily-plan"),
+          fetch("/api/review"),
+          fetch("/api/roadmap"),
+        ]);
 
       const dailyPlan =
         planResult.status === "fulfilled" && planResult.value.ok
@@ -739,20 +755,9 @@ export default function DashboardPage() {
   }
 
   if (status === "unauthenticated") {
-    return (
-      <div className="mx-auto mt-20 max-w-lg">
-        <div className="card p-8 text-center">
-          <ShieldCheck className="mx-auto mb-4 h-12 w-12 text-blue-500" />
-          <h2 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white">
-            Redirecting to sign-in
-          </h2>
-          <p className="mb-6 text-gray-500 dark:text-gray-400">
-            Your dashboard requires an account. Sending you back to the landing
-            page now.
-          </p>
-        </div>
-      </div>
-    );
+    // Middleware already redirects; this is a safety net.
+    // Show skeleton while the useEffect below calls router.replace("/").
+    return <DashboardSkeleton />;
   }
 
   if (!session) {
@@ -1039,7 +1044,8 @@ function TodaysMissionCard({
   nextAction: NextDashboardAction;
   onContinue: () => void;
 }) {
-  const dueCount = review?.dashboard?.queueSummary.dueCount ?? review?.due.length ?? 0;
+  const dueCount =
+    review?.dashboard?.queueSummary.dueCount ?? review?.due.length ?? 0;
   const nextMilestone = roadmap?.nextMilestone;
 
   return (
@@ -1061,14 +1067,16 @@ function TodaysMissionCard({
               ) : null}
               <div>
                 <h2 className="text-2xl font-bold">{profile.handle}</h2>
-                <p className={`text-sm font-semibold ${rankColors[profile.rank] ?? "text-blue-200"}`}>
+                <p
+                  className={`text-sm font-semibold ${rankColors[profile.rank] ?? "text-blue-200"}`}
+                >
                   {profile.rank} • {profile.rating}
                 </p>
               </div>
             </div>
             <p className="mt-4 max-w-xl text-sm text-blue-100/85">
-              Reviews, plan progress, and readiness are condensed here so the next
-              action is obvious instead of buried under charts.
+              Reviews, plan progress, and readiness are condensed here so the
+              next action is obvious instead of buried under charts.
             </p>
           </div>
 
@@ -1076,8 +1084,13 @@ function TodaysMissionCard({
             <p className="text-xs uppercase tracking-[0.16em] text-blue-100/75">
               Next action
             </p>
-            <p className="mt-2 text-lg font-semibold">{nextAction.helperText}</p>
-            <button onClick={onContinue} className="btn-primary mt-4 bg-white text-slate-950 hover:bg-blue-50">
+            <p className="mt-2 text-lg font-semibold">
+              {nextAction.helperText}
+            </p>
+            <button
+              onClick={onContinue}
+              className="btn-primary mt-4 bg-white text-slate-950 hover:bg-blue-50"
+            >
               {nextAction.label}
               <ArrowRight className="ml-2 h-4 w-4" />
             </button>
@@ -1087,7 +1100,11 @@ function TodaysMissionCard({
         <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <MissionStat
             label="Daily plan progress"
-            value={planProgress.hasPlan ? `${planProgress.completed} / ${planProgress.total}` : "0 / 0"}
+            value={
+              planProgress.hasPlan
+                ? `${planProgress.completed} / ${planProgress.total}`
+                : "0 / 0"
+            }
             helper={
               planProgress.hasPlan
                 ? planProgress.isComplete
@@ -1108,7 +1125,11 @@ function TodaysMissionCard({
           <MissionStat
             label="Target rating / milestone"
             value={`${readyFor}`}
-            helper={nextMilestone ? `${nextMilestone.title} at ${nextMilestone.targetRating}` : "Hold current growth band"}
+            helper={
+              nextMilestone
+                ? `${nextMilestone.title} at ${nextMilestone.targetRating}`
+                : "Hold current growth band"
+            }
           />
           <MissionStat
             label="Estimated readiness score"
@@ -1132,7 +1153,9 @@ function MissionStat({
 }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-      <p className="text-xs uppercase tracking-[0.14em] text-blue-100/70">{label}</p>
+      <p className="text-xs uppercase tracking-[0.14em] text-blue-100/70">
+        {label}
+      </p>
       <p className="mt-2 text-3xl font-bold text-white">{value}</p>
       <p className="mt-1 text-sm text-blue-100/75">{helper}</p>
     </div>
@@ -1149,14 +1172,18 @@ function ReadinessLadder({ ladder }: { ladder: ReadinessBucket[] }) {
             Readiness Ladder
           </h3>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Estimated from solve rate by difficulty bracket, review health, and blocker pressure.
+            Estimated from solve rate by difficulty bracket, review health, and
+            blocker pressure.
           </p>
         </div>
       </div>
 
       <div className="space-y-4">
         {ladder.map((bucket) => (
-          <div key={bucket.rating} className="grid grid-cols-[64px_1fr_auto] items-center gap-4">
+          <div
+            key={bucket.rating}
+            className="grid grid-cols-[64px_1fr_auto] items-center gap-4"
+          >
             <div className="font-mono text-sm font-semibold text-gray-700 dark:text-gray-200">
               {bucket.rating}
             </div>
@@ -1190,12 +1217,15 @@ function ReadinessLadder({ ladder }: { ladder: ReadinessBucket[] }) {
 }
 
 function ReviewHealthCard({ review }: { review: ReviewData | null }) {
-  const dueCount = review?.dashboard?.queueSummary.dueCount ?? review?.due.length ?? 0;
+  const dueCount =
+    review?.dashboard?.queueSummary.dueCount ?? review?.due.length ?? 0;
   const masteredCount = review?.dashboard?.queueSummary.masteredCount ?? 0;
   const reviewSuccessRate = review?.dashboard?.reviewSuccessRate ?? null;
   const retentionScore = review?.dashboard?.retentionScore ?? null;
   const mostRepeatedMistake =
-    review?.dashboard?.mostCommonMistake ?? review?.patterns?.[0]?.pattern ?? "Not enough review history yet";
+    review?.dashboard?.mostCommonMistake ??
+    review?.patterns?.[0]?.pattern ??
+    "Not enough review history yet";
 
   // TODO: If /api/review exposes a richer dashboard summary later, prefer that payload directly here.
   return (
@@ -1207,7 +1237,8 @@ function ReviewHealthCard({ review }: { review: ReviewData | null }) {
             Review Health
           </h3>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Reviews stay prominent because they are the highest-confidence recovery loop in the app.
+            Reviews stay prominent because they are the highest-confidence
+            recovery loop in the app.
           </p>
         </div>
         <Link href="/review" className="btn-secondary">
@@ -1229,7 +1260,9 @@ function ReviewHealthCard({ review }: { review: ReviewData | null }) {
         <MetricPanel
           icon={CheckCircle2}
           label="Review success rate"
-          value={reviewSuccessRate == null ? "N/A" : percentage(reviewSuccessRate)}
+          value={
+            reviewSuccessRate == null ? "N/A" : percentage(reviewSuccessRate)
+          }
           helper={
             retentionScore == null
               ? "Retention unavailable"
@@ -1289,7 +1322,8 @@ function TopBlockersCard({ blockers }: { blockers: Blocker[] }) {
           Top Blockers
         </h3>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Replace generic weak tags with the clearest obstacles to near-term progress.
+          Replace generic weak tags with the clearest obstacles to near-term
+          progress.
         </p>
       </div>
 
@@ -1345,7 +1379,8 @@ function CommonTagsCard({
           Common Tags for Your Rating Range
         </h3>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Frequency snapshot from recent Codeforces problems in your current bucket.
+          Frequency snapshot from recent Codeforces problems in your current
+          bucket.
         </p>
       </div>
 
@@ -1399,7 +1434,8 @@ function RecommendedProblemCard({
           Today&apos;s Recommended Problem
         </h3>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          One problem selected from today&apos;s plan or review repair candidates.
+          One problem selected from today&apos;s plan or review repair
+          candidates.
         </p>
       </div>
 
@@ -1477,7 +1513,10 @@ function RecentWinsCard({ wins }: { wins: RecentWin[] }) {
       ) : (
         <div className="space-y-4">
           {wins.map((win) => (
-            <div key={win.id} className="rounded-2xl bg-gray-50 p-4 dark:bg-gray-900/40">
+            <div
+              key={win.id}
+              className="rounded-2xl bg-gray-50 p-4 dark:bg-gray-900/40"
+            >
               <div className="flex items-start gap-3">
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
                 <div>
@@ -1518,7 +1557,9 @@ function MiniStat({
           <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-white">
             {value}
           </p>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">{helper}</p>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            {helper}
+          </p>
         </div>
         <div className="rounded-xl bg-gray-100 p-2 dark:bg-gray-800">
           <Icon className="h-5 w-5 text-gray-600 dark:text-gray-300" />
@@ -1555,7 +1596,11 @@ function LegacyChartCard({
         </p>
       </div>
 
-      {hasData ? children : <EmptyCardState title="No chart data yet" description={emptyMessage} />}
+      {hasData ? (
+        children
+      ) : (
+        <EmptyCardState title="No chart data yet" description={emptyMessage} />
+      )}
     </div>
   );
 }

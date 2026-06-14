@@ -24,7 +24,15 @@ const PROTECTED_PATHS = [
 ];
 
 // Paths that must never be blocked
-const PUBLIC_PATH_PREFIXES = ["/api/auth", "/_next", "/favicon.ico", "/guest"];
+const PUBLIC_PATH_PREFIXES = [
+  "/api/auth",
+  "/_next",
+  "/favicon.ico",
+  "/guest",
+  // Guest mode needs public CF problem browse and Jiangly lookup
+  "/api/cf/problems",
+  "/api/cf/jiangly",
+];
 
 function isProtected(pathname: string): boolean {
   return PROTECTED_PATHS.some(
@@ -53,6 +61,14 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
+  // NEXTAUTH_SECRET is required for getToken to work.
+  if (!process.env.NEXTAUTH_SECRET) {
+    console.warn(
+      "[CF Coach] NEXTAUTH_SECRET is missing. Auth middleware cannot verify sessions.",
+    );
+    return NextResponse.next();
+  }
+
   const token = await getToken({
     req,
     secret: process.env.NEXTAUTH_SECRET,
@@ -65,17 +81,9 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(signInUrl);
   }
 
-  // After sign-in, if user is on /connect-handle, let them through
-  // Other protected pages: check if CF handle exists
-  if (
-    pathname !== "/connect-handle" &&
-    pathname !== "/settings" &&
-    !pathname.startsWith("/api/")
-  ) {
-    // Allow the page to load — the page itself will show the
-    // connect-handle CTA if no CF profile is linked.
-  }
-
+  // After sign-in, if user is on /connect-handle, let them through.
+  // Other protected pages: the page component itself handles the
+  // connect-handle CTA if no CF profile is linked.
   return NextResponse.next();
 }
 
