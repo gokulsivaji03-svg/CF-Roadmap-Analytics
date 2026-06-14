@@ -1,6 +1,9 @@
 "use client";
 
 import { useSession } from "@/app/providers";
+import {
+  getProblemWorkspaceHref,
+} from "@/lib/problem-links";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -49,6 +52,8 @@ interface DailyPlan {
 }
 
 interface SimilarProblemRecommendation {
+  contestId?: number;
+  index?: string;
   name: string;
   rating: number;
   tags: string[];
@@ -188,10 +193,10 @@ function getProblemHref(problem: {
   problemContestId?: number | null;
   problemIndex?: string | null;
 }): string {
-  if (problem.problemUrl) return problem.problemUrl;
   if (problem.problemContestId != null && problem.problemIndex) {
-    return `https://codeforces.com/problemset/problem/${problem.problemContestId}/${problem.problemIndex}`;
+    return getProblemWorkspaceHref(problem.problemContestId, problem.problemIndex);
   }
+  if (problem.problemUrl) return problem.problemUrl;
   return "/daily-plan";
 }
 
@@ -323,7 +328,13 @@ function buildRecommendedProblemSummary(
       rating: formatRating(similarReviewProblem.rating),
       tags: similarReviewProblem.tags,
       reason: "Reinforces a past miss",
-      href: similarReviewProblem.cfUrl,
+      href:
+        similarReviewProblem.contestId != null && similarReviewProblem.index
+          ? getProblemWorkspaceHref(
+              similarReviewProblem.contestId,
+              similarReviewProblem.index,
+            )
+          : similarReviewProblem.cfUrl,
     };
   }
 
@@ -634,7 +645,7 @@ function RecommendedProblemCard({
             </div>
 
             <div className="mt-auto">
-              <ProblemLink href={problem.href} label="Solve Now" />
+              <ProblemLink href={problem.href} label="Solve in App" />
             </div>
           </div>
         )}

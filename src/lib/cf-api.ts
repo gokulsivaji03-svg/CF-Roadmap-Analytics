@@ -41,6 +41,16 @@ export interface CfContest {
   durationSeconds?: number
 }
 
+export interface CfProblemSummary {
+  contestId: number
+  index: string
+  name: string
+  rating: number
+  tags: string[]
+  solvedCount: number | null
+  cfUrl: string
+}
+
 export interface CfRatingChange {
   contestId: number
   contestName?: string
@@ -315,7 +325,7 @@ export async function fetchProblemsFromCF(
   tags: string[] = [],
   minRating = 800,
   maxRating = 1100
-) {
+): Promise<CfProblemSummary[]> {
   const params: Record<string, string> = {}
   if (tags.length > 0) params.tags = tags.join(";")
 
@@ -352,4 +362,20 @@ export async function fetchProblemsFromCF(
   } catch {
     return []
   }
+}
+
+export async function fetchProblemByContestAndIndex(
+  contestId: number,
+  index: string,
+): Promise<CfProblemSummary | null> {
+  const normalizedIndex = String(index).trim().toUpperCase()
+  const problems = await fetchProblemsFromCF([], 0, 4000)
+
+  return (
+    problems.find(
+      (problem) =>
+        problem.contestId === contestId &&
+        String(problem.index).trim().toUpperCase() === normalizedIndex,
+    ) ?? null
+  )
 }

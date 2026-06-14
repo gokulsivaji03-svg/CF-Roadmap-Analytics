@@ -1,6 +1,10 @@
 "use client";
 
 import { useSession } from "@/app/providers";
+import {
+  getCodeforcesProblemHref,
+  getProblemWorkspaceHref,
+} from "@/lib/problem-links";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -256,6 +260,23 @@ function buildJournalHref(item: PlanItem): string {
   }
 
   return `/journal?${params.toString()}`;
+}
+
+function getProblemWorkspaceLink(item: PlanItem) {
+  if (item.problemContestId != null && item.problemIndex) {
+    return getProblemWorkspaceHref(item.problemContestId, item.problemIndex);
+  }
+
+  return null;
+}
+
+function getCodeforcesLink(item: PlanItem) {
+  if (item.problemUrl) return item.problemUrl;
+  if (item.problemContestId != null && item.problemIndex) {
+    return getCodeforcesProblemHref(item.problemContestId, item.problemIndex);
+  }
+
+  return null;
 }
 
 const AGGRESSIVE_MODE_STORAGE_KEY = "daily-plan-aggressive-mode";
@@ -612,10 +633,19 @@ export default function DailyPlanPage() {
 
                   {/* Action row */}
                   <div className="flex items-center gap-3 mt-3">
-                    {/* CF link */}
-                    {item.problemUrl && (
+                    {getProblemWorkspaceLink(item) && (
+                      <Link
+                        href={getProblemWorkspaceLink(item)!}
+                        className="btn-secondary text-xs inline-flex items-center gap-1"
+                      >
+                        <Target className="w-3.5 h-3.5" />
+                        Solve in App
+                      </Link>
+                    )}
+
+                    {getCodeforcesLink(item) && (
                       <a
-                        href={item.problemUrl}
+                        href={getCodeforcesLink(item)!}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="btn-ghost text-xs inline-flex items-center gap-1"

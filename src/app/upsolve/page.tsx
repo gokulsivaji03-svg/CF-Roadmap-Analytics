@@ -1,6 +1,7 @@
 "use client";
 
 import { useSession } from "@/app/providers";
+import { getProblemWorkspaceHref } from "@/lib/problem-links";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
@@ -363,15 +364,23 @@ function ProblemCard({ problem }: { problem: UpsolveProblem }) {
         <span className="text-xs text-gray-500 dark:text-gray-400">
           {problem.contestName}
         </span>
-        <a
-          href={problem.cfUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="btn-secondary inline-flex"
-        >
-          Solve Now
-          <ExternalLink className="ml-2 h-4 w-4" />
-        </a>
+        <div className="flex items-center gap-2">
+          <Link
+            href={getProblemWorkspaceHref(problem.contestId, problem.index)}
+            className="btn-secondary inline-flex"
+          >
+            Solve in App
+          </Link>
+          <a
+            href={problem.cfUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="btn-ghost inline-flex"
+          >
+            Open
+            <ExternalLink className="ml-2 h-4 w-4" />
+          </a>
+        </div>
       </div>
     </div>
   );

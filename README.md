@@ -7,6 +7,7 @@ CF Coach is a Codeforces training workspace built with Next.js, Prisma, and Post
 - Syncs a Codeforces handle and stores profile data, contest history, submissions, and tag stats locally.
 - Shows a dashboard with rating progress, weakness signals, review health, roadmap progress, and recommended next actions.
 - Builds a daily practice plan from your rating band, weak tags, and recent problem history.
+- Adds an in-app problem workspace with metadata, local drafts, and a code editor so you can solve without leaving CF Coach immediately.
 - Lets you keep a problem journal with ideas tried, where you got stuck, hint usage, confidence, and takeaways.
 - Automatically turns failed journaled problems into review items.
 - Runs an adaptive review engine with outcomes like `Solved Easily`, `Solved With Effort`, `Needed Hint`, `Needed Editorial`, and `Still Stuck`.
@@ -22,6 +23,7 @@ CF Coach is a Codeforces training workspace built with Next.js, Prisma, and Post
 - Database: Prisma with PostgreSQL.
 - Theme: dark mode enabled by default, with a built-in light/dark toggle.
 - External data source: live Codeforces API calls.
+- Submission flow: CF Coach opens the official Codeforces submit page, copies your code locally when possible, and syncs verdicts afterward through the public API.
 
 ## Tech stack
 
@@ -39,6 +41,18 @@ CF Coach is a Codeforces training workspace built with Next.js, Prisma, and Post
 > **Database note:** The current Prisma schema uses PostgreSQL. Local development should use a local Postgres database. For Vercel production, use hosted Postgres if you want persistent auth and user data.
 
 ## Main sections
+
+### In-App Problem Workspace
+
+The problem workspace now supports:
+
+- opening recommended problems inside the app first
+- viewing problem metadata and a safe statement fallback
+- writing code in an in-app editor with browser-local draft saving
+- opening the official Codeforces submit page without storing credentials
+- syncing the latest verdict afterward through `user.status`
+
+> **Codeforces submission limitation:** Direct Codeforces submission is not supported by the official public API. CF Coach does not ask for Codeforces passwords, does not store session cookies, and does not auto-submit solutions. Instead, it opens the official submit page and syncs verdicts afterward.
 
 ### Dashboard
 

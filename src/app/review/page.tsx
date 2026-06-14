@@ -1,6 +1,10 @@
 "use client";
 
 import { useSession } from "@/app/providers";
+import {
+  getCodeforcesProblemHref,
+  getProblemWorkspaceHref,
+} from "@/lib/problem-links";
 import { useEffect, useState, useCallback } from "react";
 import toast from "react-hot-toast";
 import {
@@ -135,12 +139,20 @@ interface ReviewData {
 
 const STAGE_LABELS = ["1d", "3d", "7d", "21d", "Mastered"];
 
-function getCfProblemUrl(item: ReviewItem): string {
+function getCodeforcesProblemUrl(item: ReviewItem): string {
   if (item.problemUrl) return item.problemUrl;
   if (item.problemContestId != null && item.problemIndex) {
-    return `https://codeforces.com/problemset/problem/${item.problemContestId}/${item.problemIndex}`;
+    return getCodeforcesProblemHref(item.problemContestId, item.problemIndex);
   }
   return "#";
+}
+
+function getWorkspaceProblemUrl(item: ReviewItem): string | null {
+  if (item.problemContestId != null && item.problemIndex) {
+    return getProblemWorkspaceHref(item.problemContestId, item.problemIndex);
+  }
+
+  return null;
 }
 
 function getRatingColorClass(rating: number | null): string {
@@ -453,14 +465,12 @@ export default function ReviewPage() {
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <a
-                      href={getCfProblemUrl(item)}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <Link
+                      href={getWorkspaceProblemUrl(item) ?? getCodeforcesProblemUrl(item)}
                       className="font-semibold text-gray-900 dark:text-white truncate hover:text-blue-600 dark:hover:text-blue-400"
                     >
                       {item.problemName || "Unknown Problem"}
-                    </a>
+                    </Link>
                     {item.problemRating != null && (
                       <span
                         className={`text-xs font-semibold ${getRatingColorClass(item.problemRating)}`}
@@ -666,14 +676,12 @@ function ReviewQueueCard({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <a
-              href={getCfProblemUrl(item)}
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href={getWorkspaceProblemUrl(item) ?? getCodeforcesProblemUrl(item)}
               className="font-semibold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 truncate"
             >
               {item.problemName || "Unknown Problem"}
-            </a>
+            </Link>
             {item.problemRating != null && (
               <span
                 className={`text-xs font-semibold ${getRatingColorClass(item.problemRating)}`}
@@ -682,7 +690,7 @@ function ReviewQueueCard({
               </span>
             )}
             <a
-              href={getCfProblemUrl(item)}
+              href={getCodeforcesProblemUrl(item)}
               target="_blank"
               rel="noopener noreferrer"
               className="text-gray-400 hover:text-blue-500"
@@ -762,18 +770,16 @@ function ReviewQueueCard({
           </p>
           <div className="space-y-2">
             {item.similarProblemRecommendations.map((problem) => (
-              <a
+              <Link
                 key={`${problem.type}-${problem.contestId}-${problem.index}`}
-                href={problem.cfUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+                href={getProblemWorkspaceHref(problem.contestId, problem.index)}
                 className="flex items-center justify-between gap-3 text-sm text-blue-700 dark:text-blue-300 hover:underline"
               >
                 <span>
                   {problem.type === "easier" ? "Easier" : "Equal"}: {problem.name}
                 </span>
                 <span className="font-semibold">{problem.rating}</span>
-              </a>
+              </Link>
             ))}
           </div>
         </div>

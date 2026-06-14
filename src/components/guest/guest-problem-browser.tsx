@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { getProblemWorkspaceHref } from "@/lib/problem-links";
 import { useEffect, useState } from "react";
 import { ExternalLink, Loader2, Target } from "lucide-react";
 
@@ -203,11 +204,8 @@ export function GuestProblemBrowser() {
         ) : (
           <div className="grid gap-3">
             {problems.map((problem) => (
-              <a
+              <div
                 key={problemKey(problem)}
-                href={problem.cfUrl}
-                target="_blank"
-                rel="noreferrer"
                 className="rounded-xl border border-gray-200 p-4 hover:border-blue-300 dark:border-surface-border-dark"
               >
                 <div className="flex items-start justify-between gap-3">
@@ -232,7 +230,23 @@ export function GuestProblemBrowser() {
                   </div>
                   <ExternalLink className="mt-1 h-4 w-4 shrink-0 text-gray-400" />
                 </div>
-              </a>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <Link
+                    href={getProblemWorkspaceHref(problem.contestId, problem.index)}
+                    className="btn-secondary text-sm"
+                  >
+                    Solve in App
+                  </Link>
+                  <a
+                    href={problem.cfUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="btn-ghost text-sm"
+                  >
+                    Open on Codeforces
+                  </a>
+                </div>
+              </div>
             ))}
           </div>
         )}
