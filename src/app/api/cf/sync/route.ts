@@ -192,16 +192,41 @@ export async function DELETE() {
 
     const profile = await prisma.cfProfile.findUnique({
       where: { userId: session.user.id },
+      select: { id: true },
     });
 
-    if (profile) {
-      await prisma.cfSubmission.deleteMany({
-        where: { cfProfileId: profile.id },
+    await prisma.$transaction(async (tx) => {
+      await tx.reviewAttempt.deleteMany({
+        where: { userId: session.user.id },
       });
-      await prisma.cfContest.deleteMany({ where: { cfProfileId: profile.id } });
-      await prisma.cfTagStat.deleteMany({ where: { cfProfileId: profile.id } });
-      await prisma.cfProfile.delete({ where: { id: profile.id } });
-    }
+      await tx.reviewSchedule.deleteMany({
+        where: { userId: session.user.id },
+      });
+      await tx.dailyPlan.deleteMany({
+        where: { userId: session.user.id },
+      });
+      await tx.journalEntry.deleteMany({
+        where: { userId: session.user.id },
+      });
+      await tx.mistakePattern.deleteMany({
+        where: { userId: session.user.id },
+      });
+
+      if (profile) {
+        await tx.cfSubmission.deleteMany({
+          where: { cfProfileId: profile.id },
+        });
+        await tx.cfContest.deleteMany({
+          where: { cfProfileId: profile.id },
+        });
+        await tx.cfTagStat.deleteMany({
+          where: { cfProfileId: profile.id },
+        });
+        await tx.cfProfile.delete({
+          where: { id: profile.id },
+        });
+      }
+    });
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

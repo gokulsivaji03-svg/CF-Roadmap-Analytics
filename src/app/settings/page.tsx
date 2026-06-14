@@ -147,8 +147,8 @@ export default function SettingsPage() {
 
   async function handleDeleteAllData() {
     const confirmed = window.confirm(
-      "Are you sure you want to delete all your Codeforces data?\n\n" +
-        "This will remove your profile, submissions, contest history, and tag statistics. " +
+      "Are you sure you want to delete all your training data?\n\n" +
+        "This will remove your Codeforces profile data, journals, reviews, daily plans, and related history. " +
         "This action cannot be undone.",
     );
     if (!confirmed) return;
@@ -160,7 +160,7 @@ export default function SettingsPage() {
         const err = await res.json();
         throw new Error(err.error || "Failed to delete data");
       }
-      toast.success("All Codeforces data deleted");
+      toast.success("All training data deleted");
       setProfile(null);
       setStats(null);
       setNeedsSync(true);
@@ -480,11 +480,11 @@ export default function SettingsPage() {
         <div className="flex items-center justify-between p-4 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-100 dark:border-red-900/30">
           <div>
             <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-              Delete all Codeforces data
+              Delete all training data
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-              Removes your CF profile, submissions, contests, and tag
-              statistics.
+              Removes your CF profile data, journals, reviews, daily plans, and
+              related history.
             </p>
           </div>
           <button
