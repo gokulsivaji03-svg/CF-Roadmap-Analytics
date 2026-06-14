@@ -10,7 +10,7 @@ type AuthButtonsProps = {
 };
 
 export function AuthButtons({
-  callbackUrl = "/dashboard",
+  callbackUrl = "/connect-handle",
   googleEnabled,
   githubEnabled,
 }: AuthButtonsProps) {

@@ -19,7 +19,8 @@ const errorMessages: Record<string, string> = {
   OAuthAccountNotLinked:
     "That email is already linked to a different sign-in provider.",
   OAuthCallback: "The OAuth callback did not complete successfully.",
-  OAuthCreateAccount: "The account could not be created from the OAuth profile.",
+  OAuthCreateAccount:
+    "The account could not be created from the OAuth profile.",
   OAuthSignin: "The OAuth sign-in request could not be started.",
   default: "Sign-in failed. Check your OAuth app callback URLs and try again.",
 };
@@ -34,20 +35,18 @@ function getErrorMessage(error?: string | string[]) {
 function getCallbackUrl(callbackUrl?: string | string[]) {
   const value = Array.isArray(callbackUrl) ? callbackUrl[0] : callbackUrl;
 
-  if (!value) return "/dashboard";
+  if (!value) return "/connect-handle";
   if (value.startsWith("/")) return value;
 
   try {
     const url = new URL(value);
-    return `${url.pathname}${url.search}${url.hash}` || "/dashboard";
+    return `${url.pathname}${url.search}${url.hash}` || "/connect-handle";
   } catch {
-    return "/dashboard";
+    return "/connect-handle";
   }
 }
 
-export default async function LandingPage({
-  searchParams,
-}: LandingPageProps) {
+export default async function LandingPage({ searchParams }: LandingPageProps) {
   const session = await getAppSession();
   const errorMessage = getErrorMessage(searchParams?.error);
   const callbackUrl = getCallbackUrl(searchParams?.callbackUrl);
@@ -108,12 +107,15 @@ export default async function LandingPage({
               </p>
             </div>
             <div className="flex flex-col gap-3">
-              <Link href="/dashboard" className="btn-primary w-full text-center">
+              <Link
+                href="/dashboard"
+                className="btn-primary w-full text-center"
+              >
                 Go to dashboard
               </Link>
               {!cfProfile?.handle ? (
                 <Link
-                  href="/settings"
+                  href="/connect-handle"
                   className="btn-secondary w-full text-center"
                 >
                   Connect Codeforces handle

@@ -115,7 +115,9 @@ export function Navbar() {
               </>
             ) : (
               <button
-                onClick={() => signIn(undefined, { callbackUrl: "/dashboard" })}
+                onClick={() =>
+                  signIn(undefined, { callbackUrl: "/connect-handle" })
+                }
                 className="hidden sm:inline-flex btn-primary px-3 py-2 text-sm"
               >
                 Sign in
@@ -170,7 +172,9 @@ export function Navbar() {
               </button>
             ) : (
               <button
-                onClick={() => signIn(undefined, { callbackUrl: "/dashboard" })}
+                onClick={() =>
+                  signIn(undefined, { callbackUrl: "/connect-handle" })
+                }
                 className="w-full text-left flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 Sign in
