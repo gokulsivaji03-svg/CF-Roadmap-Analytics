@@ -4,6 +4,9 @@ import { normalizeDailyPlan } from "@/lib/serialization";
 import { getAppSession } from "@/lib/session";
 import { generateDailyPlan } from "@/lib/daily-plan-generator";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 const RECENT_CONTEST_WINDOW_DAYS = 14;
 
 function serializeDailyPlan<

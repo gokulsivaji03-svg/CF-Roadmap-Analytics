@@ -8,23 +8,57 @@ import {
   analyzeWeaknesses,
 } from "@/lib/cf-api";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 export async function POST(req: NextRequest) {
   try {
     const session = await getAppSession();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Sign in required before syncing Codeforces data." },
+        { status: 401 },
+      );
     }
 
-    const { handle } = await req.json();
-    if (!handle || typeof handle !== "string") {
+    const body = await req.json().catch(() => ({}));
+    const submittedHandle =
+      typeof body.handle === "string" ? body.handle.trim() : "";
+    const existingProfile = await prisma.cfProfile.findUnique({
+      where: { userId: session.user.id },
+      select: { id: true, handle: true },
+    });
+    const handle = submittedHandle || existingProfile?.handle || "";
+
+    if (!handle) {
       return NextResponse.json(
-        { error: "Handle is required" },
+        {
+          error:
+            "No Codeforces handle connected. Add your handle in Settings and sync again.",
+        },
         { status: 400 },
       );
     }
 
     // Fetch CF user info
     const cfUser = await fetchUserInfo(handle);
+    const conflictingProfile = await prisma.cfProfile.findFirst({
+      where: {
+        handle: cfUser.handle,
+        NOT: { userId: session.user.id },
+      },
+      select: { id: true },
+    });
+
+    if (conflictingProfile) {
+      return NextResponse.json(
+        {
+          error:
+            "That Codeforces handle is already connected to another account.",
+        },
+        { status: 409 },
+      );
+    }
 
     // Upsert CF profile
     const profile = await prisma.cfProfile.upsert({
@@ -39,6 +73,7 @@ export async function POST(req: NextRequest) {
         avatar: cfUser.avatar ?? null,
         contribution: cfUser.contribution ?? 0,
         friendOfCount: cfUser.friendOfCount ?? 0,
+        lastSync: new Date(),
       },
       update: {
         handle: cfUser.handle,
@@ -149,7 +184,10 @@ export async function DELETE() {
   try {
     const session = await getAppSession();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { error: "Sign in required before deleting Codeforces data." },
+        { status: 401 },
+      );
     }
 
     const profile = await prisma.cfProfile.findUnique({
@@ -168,7 +206,7 @@ export async function DELETE() {
     return NextResponse.json({ success: true });
   } catch (error: any) {
     return NextResponse.json(
-      { error: "Failed to delete data" },
+      { error: error.message || "Failed to delete data" },
       { status: 500 },
     );
   }

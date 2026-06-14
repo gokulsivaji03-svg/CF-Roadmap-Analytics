@@ -621,7 +621,7 @@ function getRecentWins(
 }
 
 export default function DashboardPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const [handle, setHandle] = useState("");
   const [syncing, setSyncing] = useState(false);
@@ -639,6 +639,12 @@ export default function DashboardPage() {
     if (!session) return;
     void fetchDashboardData();
   }, [session]);
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.replace("/");
+    }
+  }, [router, status]);
 
   async function fetchDashboardData(mode: "load" | "refresh" = "load") {
     if (mode === "load") {
@@ -715,6 +721,10 @@ export default function DashboardPage() {
         const err = await res.json();
         throw new Error(err.error || "Sync failed");
       }
+      const data = (await res.json()) as {
+        profile?: { handle?: string };
+      };
+      setHandle(data.profile?.handle ?? handle.trim());
       toast.success("Codeforces data synced!");
       await fetchDashboardData();
     } catch (error: unknown) {
@@ -724,12 +734,29 @@ export default function DashboardPage() {
     }
   }
 
-  if (!session) {
+  if (status === "loading") {
+    return <DashboardSkeleton />;
+  }
+
+  if (status === "unauthenticated") {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <p className="text-gray-500">Please sign in to view your dashboard.</p>
+      <div className="mx-auto mt-20 max-w-lg">
+        <div className="card p-8 text-center">
+          <ShieldCheck className="mx-auto mb-4 h-12 w-12 text-blue-500" />
+          <h2 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white">
+            Redirecting to sign-in
+          </h2>
+          <p className="mb-6 text-gray-500 dark:text-gray-400">
+            Your dashboard requires an account. Sending you back to the landing
+            page now.
+          </p>
+        </div>
       </div>
     );
+  }
+
+  if (!session) {
+    return <DashboardSkeleton />;
   }
 
   if (loading) {
@@ -765,6 +792,9 @@ export default function DashboardPage() {
               {syncing ? "Syncing..." : "Sync"}
             </button>
           </div>
+          <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
+            Prefer to manage the handle later? Update it from Settings anytime.
+          </p>
         </div>
       </div>
     );

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useSession } from "@/app/providers";
+import { signIn, signOut, useSession } from "@/app/providers";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
@@ -36,7 +36,7 @@ const navItems = [
 
 export function Navbar() {
   const pathname = usePathname();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const { theme, setTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -101,10 +101,25 @@ export function Navbar() {
               )}
             </button>
 
-            {session?.user?.name && (
-              <span className="hidden sm:inline text-sm text-gray-500">
-                {session.user.name}
-              </span>
+            {status === "authenticated" && session?.user ? (
+              <>
+                <span className="hidden sm:inline text-sm text-gray-500">
+                  {session.user.name ?? session.user.email ?? "Account"}
+                </span>
+                <button
+                  onClick={() => signOut({ callbackUrl: "/" })}
+                  className="hidden sm:inline-flex btn-secondary px-3 py-2 text-sm"
+                >
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => signIn(undefined, { callbackUrl: "/dashboard" })}
+                className="hidden sm:inline-flex btn-primary px-3 py-2 text-sm"
+              >
+                Sign in
+              </button>
             )}
 
             {/* Mobile menu button */}
@@ -146,6 +161,21 @@ export function Navbar() {
                 </Link>
               );
             })}
+            {status === "authenticated" ? (
+              <button
+                onClick={() => signOut({ callbackUrl: "/" })}
+                className="w-full text-left flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                Sign out
+              </button>
+            ) : (
+              <button
+                onClick={() => signIn(undefined, { callbackUrl: "/dashboard" })}
+                className="w-full text-left flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg transition-colors text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                Sign in
+              </button>
+            )}
           </div>
         </div>
       )}

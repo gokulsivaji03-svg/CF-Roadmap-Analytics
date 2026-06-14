@@ -9,6 +9,9 @@ import { getAppSession } from "@/lib/session";
 import { computeImportanceScore } from "@/lib/review-engine";
 import { recordMistakePatterns } from "@/lib/mistake-patterns";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const session = await getAppSession();
   if (!session?.user?.id)

@@ -1,43 +1,27 @@
 "use client";
 
+import type { Session } from "next-auth";
+import { SessionProvider, signIn, signOut, useSession } from "next-auth/react";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "react-hot-toast";
 import { useEffect, useState } from "react";
-import { createContext, useContext } from "react";
-import { defaultSession } from "@/lib/session";
 
-// Simple session context - no auth needed
-interface SessionUser {
-  id: string;
-  name: string;
-  email: string;
-  image?: string | null;
-}
+export { signIn, signOut, useSession };
 
-interface Session {
-  user: SessionUser;
-  expires: string;
-}
-
-const SessionContext = createContext<{ data: Session; status: string }>({
-  data: defaultSession,
-  status: "authenticated",
-});
-
-export function useSession() {
-  return useContext(SessionContext);
-}
-
-export function Providers({ children }: { children: React.ReactNode }) {
+export function Providers({
+  children,
+  session,
+}: {
+  children: React.ReactNode;
+  session: Session | null;
+}) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
   }, []);
 
   return (
-    <SessionContext.Provider
-      value={{ data: defaultSession, status: "authenticated" }}
-    >
+    <SessionProvider session={session} refetchOnWindowFocus={false}>
       <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
         {mounted && (
           <Toaster
@@ -50,6 +34,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
         )}
         {children}
       </ThemeProvider>
-    </SessionContext.Provider>
+    </SessionProvider>
   );
 }

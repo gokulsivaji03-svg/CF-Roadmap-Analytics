@@ -24,6 +24,9 @@ import {
 } from "@/lib/utils";
 import { recordMistakePatterns } from "@/lib/mistake-patterns";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 function roundTo100(value: number) {
   return Math.round(value / 100) * 100;
 }

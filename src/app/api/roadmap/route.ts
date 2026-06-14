@@ -3,6 +3,9 @@ import { prisma } from "@/lib/db"
 import { ROADMAP_MILESTONES, nextMilestone, milestoneForRating } from "@/lib/roadmap"
 import { getAppSession } from "@/lib/session"
 
+export const runtime = "nodejs"
+export const dynamic = "force-dynamic"
+
 function getSolvedProblemKey(problem: {
   contestId: number | null
   problemIndex: string | null

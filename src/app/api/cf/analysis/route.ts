@@ -4,6 +4,9 @@ import { getAppSession } from "@/lib/session"
 import { parseStringArray } from "@/lib/serialization"
 import { getRatingBucket, getTopTagsForRating } from "@/lib/tag-frequency"
 
+export const runtime = "nodejs"
+export const dynamic = "force-dynamic"
+
 const ATTEMPT_DIFFICULTY_BRACKETS = [
   { label: "800-1000", min: 800, max: 1000 },
   { label: "1100-1300", min: 1100, max: 1300 },
@@ -198,7 +201,13 @@ export async function GET() {
     })
 
     if (!profile) {
-      return NextResponse.json({ error: "No CF profile found. Sync first." }, { status: 404 })
+      return NextResponse.json(
+        {
+          error:
+            "No Codeforces handle connected yet. Connect your handle in Settings and sync first.",
+        },
+        { status: 404 },
+      )
     }
 
     const recentContestWindowStart = new Date()
@@ -294,6 +303,7 @@ export async function GET() {
         rank: profile.rank,
         maxRank: profile.maxRank,
         avatar: profile.avatar,
+        lastSync: profile.lastSync,
       },
       stats: {
         totalSubmissions: profile.submissions.length,

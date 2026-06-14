@@ -1,6 +1,6 @@
 "use client";
 
-import { useSession } from "@/app/providers";
+import { signIn, useSession } from "@/app/providers";
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import toast from "react-hot-toast";
@@ -23,6 +23,7 @@ interface CfProfile {
   rank: string;
   maxRank: string;
   avatar: string | null;
+  lastSync?: string | null;
 }
 
 interface CfStats {
@@ -32,7 +33,7 @@ interface CfStats {
 }
 
 export default function SettingsPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
@@ -63,10 +64,11 @@ export default function SettingsPage() {
       }
       const json = await res.json();
       setProfile(json.profile);
+      setHandle(json.profile.handle ?? "");
       setStats({
         solvedCount: json.stats.solvedCount,
         contestsParticipated: json.stats.contestsParticipated,
-        lastSync: null, // analysis endpoint doesn't return lastSync; we get it from sync response
+        lastSync: json.profile.lastSync ?? null,
       });
       setNeedsSync(false);
     } catch {
@@ -96,6 +98,7 @@ export default function SettingsPage() {
       const data = await res.json();
       toast.success("Codeforces data synced!");
       setProfile(data.profile);
+      setHandle(data.profile?.handle ?? cfHandle);
       setStats({
         solvedCount: data.submissionsCount ?? 0,
         contestsParticipated: data.contestsCount ?? 0,
@@ -125,6 +128,7 @@ export default function SettingsPage() {
       const data = await res.json();
       toast.success("Codeforces data re-synced!");
       setProfile(data.profile);
+      setHandle(data.profile?.handle ?? profile.handle);
       setStats({
         solvedCount: data.submissionsCount ?? 0,
         contestsParticipated: data.contestsCount ?? 0,
@@ -164,10 +168,40 @@ export default function SettingsPage() {
     }
   }
 
+  if (status === "loading") {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <p className="text-gray-500">Loading account...</p>
+      </div>
+    );
+  }
+
   if (!session) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <p className="text-gray-500">Please sign in to manage your settings.</p>
+        <div className="card max-w-md p-8 text-center">
+          <User className="w-10 h-10 text-blue-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+            Sign in to manage your profile
+          </h2>
+          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+            Connect Google or GitHub first, then attach your Codeforces handle.
+          </p>
+          <div className="mt-6 flex flex-col gap-3">
+            <button
+              onClick={() => signIn("google", { callbackUrl: "/settings" })}
+              className="btn-primary"
+            >
+              Sign in with Google
+            </button>
+            <button
+              onClick={() => signIn("github", { callbackUrl: "/settings" })}
+              className="btn-secondary"
+            >
+              Sign in with GitHub
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -280,6 +314,29 @@ export default function SettingsPage() {
                 <p className="text-xs text-gray-500">
                   Max: {profile.maxRating} ({profile.maxRank})
                 </p>
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Connected Codeforces handle
+              </label>
+              <div className="flex gap-3">
+                <input
+                  type="text"
+                  value={handle}
+                  onChange={(e) => setHandle(e.target.value)}
+                  className="input-field flex-1"
+                  placeholder="Your Codeforces handle"
+                  onKeyDown={(e) => e.key === "Enter" && void handleSync()}
+                />
+                <button
+                  onClick={() => void handleSync()}
+                  disabled={syncing}
+                  className="btn-secondary"
+                >
+                  {syncing ? "Saving..." : "Save + Sync"}
+                </button>
               </div>
             </div>
 

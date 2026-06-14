@@ -4,6 +4,9 @@ import { generateContestSimulation } from "@/lib/daily-plan-generator";
 import { normalizeContestProblem } from "@/lib/serialization";
 import { getAppSession } from "@/lib/session";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const session = await getAppSession();
   if (!session?.user?.id)
