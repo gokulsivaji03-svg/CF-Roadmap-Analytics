@@ -52,11 +52,11 @@ export function Navbar() {
   return (
     <nav className="sticky top-0 z-50 bg-white/80 dark:bg-surface-dark/80 backdrop-blur-lg border-b border-gray-200 dark:border-surface-border-dark">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-[4.5rem]">
           {/* Logo */}
           <Link
             href="/dashboard"
-            className="flex items-center gap-2 font-bold text-lg"
+            className="flex items-center gap-3 font-bold text-lg"
           >
             <span className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white text-sm font-bold">
               CF
@@ -65,7 +65,7 @@ export function Navbar() {
           </Link>
 
           {/* Desktop nav */}
-          <div className="hidden lg:flex items-center gap-1">
+          <div className="hidden lg:flex items-center gap-2">
             {navItems.map((item) => {
               const isActive =
                 pathname === item.href || pathname.startsWith(item.href);
@@ -74,7 +74,7 @@ export function Navbar() {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-colors",
+                    "flex items-center gap-2 px-3.5 py-2 text-sm font-medium rounded-lg transition-colors",
                     isActive
                       ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
                       : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800",
@@ -88,7 +88,7 @@ export function Navbar() {
           </div>
 
           {/* Right side */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
               className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -104,17 +104,17 @@ export function Navbar() {
             </button>
 
             {status === "authenticated" && session?.user ? (
-              <>
+              <div className="hidden sm:flex items-center gap-3 border-l border-gray-200 pl-4 dark:border-surface-border-dark">
                 <span className="hidden sm:inline text-sm text-gray-500">
                   {session.user.name ?? session.user.email ?? "Account"}
                 </span>
                 <button
                   onClick={() => signOut({ callbackUrl: "/" })}
-                  className="hidden sm:inline-flex btn-secondary px-3 py-2 text-sm"
+                  className="inline-flex btn-secondary px-3 py-2 text-sm"
                 >
                   Sign out
                 </button>
-              </>
+              </div>
             ) : hasAnyProvider ? (
               <button
                 onClick={() =>
