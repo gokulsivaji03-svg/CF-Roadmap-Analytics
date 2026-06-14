@@ -38,6 +38,7 @@ export interface CfContest {
   type?: string
   phase?: string
   startTimeSeconds?: number
+  durationSeconds?: number
 }
 
 export interface CfRatingChange {
