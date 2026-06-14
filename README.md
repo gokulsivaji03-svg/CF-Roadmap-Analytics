@@ -178,7 +178,7 @@ OPENAI_API_KEY=""
 Notes:
 
 - `DATABASE_URL` must point to a PostgreSQL database. For Vercel, use a Neon pooled connection string.
-- `DIRECT_DATABASE_URL` is used by Prisma CLI for migrations (non-pooled).
+- `DIRECT_DATABASE_URL` — used by Prisma CLI for schema push/migrate (non-pooled). On Vercel runtime only `DATABASE_URL` (pooled) is required; keep `DIRECT_DATABASE_URL` for local CLI against prod if needed.
 - `NEXTAUTH_URL` must match the port the app is actually running on. Use `npm run dev -- -p 3000` to pin the port.
 - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are required to sign in with Google.
 - `GITHUB_ID` and `GITHUB_SECRET` are required to sign in with GitHub.
@@ -226,9 +226,8 @@ Then open `http://localhost:3000`.
 ## Typical workflow
 
 1. Open the app and sign in with Google or GitHub.
-2. Go to `Settings`.
-3. Enter your Codeforces handle and run sync.
-4. Review the dashboard and weakness analysis.
+2. Connect your Codeforces handle at `/connect-handle` (or from Settings).
+3. Run sync and review the dashboard and weakness analysis.
 5. Generate a daily plan.
 6. Log failed or partially solved problems in the journal.
 7. Work through the review queue over time.
@@ -254,6 +253,7 @@ The project exposes app routes for:
 - Authentication uses NextAuth.js v4 with the Prisma adapter.
 - User-specific data is keyed by the signed-in app user, not a global guest profile.
 - Codeforces sync currently imports up to the latest 2000 submissions for the selected handle.
+- **Sync timeout on Vercel:** Large handles may exceed the default serverless duration (10s on Hobby). First sync can take a while; retry or use a smaller test handle. Pro plans can raise `maxDuration` if needed.
 - Codeforces does not provide OAuth login. Users authenticate with Google or GitHub, then connect a Codeforces handle for sync.
 - The UI assumes network access to `codeforces.com/api`.
 - The tag-frequency JSON stays server-side and only lightweight summary data is sent to the client.
@@ -272,6 +272,7 @@ The project exposes app routes for:
 | Install Command | `npm install --legacy-peer-deps` |
 | Build Command | `npm run build` |
 | Output Directory | `.next` (auto-detected) |
+| Node.js Version | 18.x or 20.x |
 
 4. Add environment variables in Vercel dashboard (see below).
 5. Deploy.
@@ -288,8 +289,16 @@ The project exposes app routes for:
 
 Optional:
 - `OPENAI_API_KEY` — For AI Coach
-- `DIRECT_DATABASE_URL` — Non-pooled URL for `prisma db push` (local only)
+- `DIRECT_DATABASE_URL` — Non-pooled URL for one-time `prisma db push` from your machine (not needed at runtime on Vercel)
 - `CODEFORCES_API_KEY` / `CODEFORCES_API_SECRET` — Not required for basic sync
+
+### Preview deployments
+
+NextAuth v4 uses a single `NEXTAUTH_URL` per deployment. For Vercel preview URLs, either:
+- Add each preview callback URL to your Google/GitHub OAuth apps, or
+- Use a stable custom domain for auth and set `NEXTAUTH_URL` to that domain.
+
+Preview sign-in often fails until callback URLs match the preview origin exactly.
 
 ### OAuth Callback URLs
 
@@ -329,4 +338,4 @@ npm run db:studio
 
 ## Status
 
-This codebase already has a substantial end-to-end local workflow: sync, analyze, plan, journal, review, simulate contests, and inspect progress. The biggest current simplification is authentication: everything runs as one local guest user instead of a real multi-user sign-in system.
+This codebase supports full multi-user sign-in (Google/GitHub via NextAuth v4), per-user Codeforces handle connection, and an end-to-end workflow: sync, analyze, plan, journal, review, simulate contests, and inspect progress. Guest mode at `/guest` remains available for browsing without an account.

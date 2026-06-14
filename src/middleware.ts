@@ -66,6 +66,11 @@ export async function middleware(req: NextRequest) {
     console.warn(
       "[CF Coach] NEXTAUTH_SECRET is missing. Auth middleware cannot verify sessions.",
     );
+    if (process.env.NODE_ENV === "production") {
+      const signInUrl = new URL("/", req.url);
+      signInUrl.searchParams.set("callbackUrl", pathname);
+      return NextResponse.redirect(signInUrl);
+    }
     return NextResponse.next();
   }
 

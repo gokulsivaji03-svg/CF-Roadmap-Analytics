@@ -163,6 +163,12 @@ if (!process.env.NEXTAUTH_SECRET) {
   }
 }
 
+if (providers.length === 0) {
+  console.warn(
+    "[CF Coach] No OAuth providers configured. Set GOOGLE_CLIENT_ID/GOOGLE_CLIENT_SECRET and/or GITHUB_ID/GITHUB_SECRET to enable sign-in.",
+  );
+}
+
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   adapter: useDatabaseSessions ? PrismaAdapter(prisma) : undefined,

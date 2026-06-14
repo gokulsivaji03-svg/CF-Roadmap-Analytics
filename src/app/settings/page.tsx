@@ -1,6 +1,8 @@
 "use client";
 
-import { signIn, useSession } from "@/app/providers";
+import { useSession } from "@/app/providers";
+import { AuthButtons } from "@/components/auth/auth-buttons";
+import { useAuthProviders } from "@/hooks/use-auth-providers";
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import toast from "react-hot-toast";
@@ -35,6 +37,8 @@ interface CfStats {
 export default function SettingsPage() {
   const { data: session, status } = useSession();
   const { theme, setTheme } = useTheme();
+  const { googleEnabled, githubEnabled, loading: providersLoading } =
+    useAuthProviders();
   const [mounted, setMounted] = useState(false);
 
   const [handle, setHandle] = useState("");
@@ -187,20 +191,17 @@ export default function SettingsPage() {
           <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
             Connect Google or GitHub first, then attach your Codeforces handle.
           </p>
-          <div className="mt-6 flex flex-col gap-3">
-            <button
-              onClick={() => signIn("google", { callbackUrl: "/settings" })}
-              className="btn-primary"
-            >
-              Sign in with Google
-            </button>
-            <button
-              onClick={() => signIn("github", { callbackUrl: "/settings" })}
-              className="btn-secondary"
-            >
-              Sign in with GitHub
-            </button>
-          </div>
+          {providersLoading ? (
+            <p className="mt-6 text-sm text-gray-500 dark:text-gray-400">
+              Loading sign-in options...
+            </p>
+          ) : (
+            <AuthButtons
+              callbackUrl="/settings"
+              googleEnabled={googleEnabled}
+              githubEnabled={githubEnabled}
+            />
+          )}
         </div>
       </div>
     );

@@ -22,7 +22,6 @@ import {
   Brain,
   CheckCircle2,
   Clock3,
-  Code,
   ExternalLink,
   LineChart,
   RefreshCw,
@@ -638,11 +637,9 @@ function getRecentWins(
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [handle, setHandle] = useState("");
-  const [syncing, setSyncing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [needsSync, setNeedsSync] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
   const [dashboard, setDashboard] = useState<DashboardState>({
     analysis: null,
     dailyPlan: null,
@@ -671,13 +668,8 @@ export default function DashboardPage() {
     try {
       const analysisRes = await fetch("/api/cf/analysis");
       if (analysisRes.status === 404) {
-        setNeedsSync(true);
-        setDashboard({
-          analysis: null,
-          dailyPlan: null,
-          review: null,
-          roadmap: null,
-        });
+        setRedirecting(true);
+        router.replace("/connect-handle");
         return;
       }
 
@@ -686,7 +678,6 @@ export default function DashboardPage() {
       }
 
       const analysis = (await analysisRes.json()) as AnalysisData;
-      setNeedsSync(false);
 
       const [planResult, reviewResult, roadmapResult] =
         await Promise.allSettled([
@@ -710,43 +701,12 @@ export default function DashboardPage() {
 
       setDashboard({ analysis, dailyPlan, review, roadmap });
     } catch (error: unknown) {
-      setNeedsSync(true);
       toast.error(
         error instanceof Error ? error.message : "Could not load dashboard",
       );
     } finally {
       setLoading(false);
       setRefreshing(false);
-    }
-  }
-
-  async function handleSync() {
-    if (!handle.trim()) {
-      toast.error("Enter your Codeforces handle");
-      return;
-    }
-
-    setSyncing(true);
-    try {
-      const res = await fetch("/api/cf/sync", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ handle: handle.trim() }),
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Sync failed");
-      }
-      const data = (await res.json()) as {
-        profile?: { handle?: string };
-      };
-      setHandle(data.profile?.handle ?? handle.trim());
-      toast.success("Codeforces data synced!");
-      await fetchDashboardData();
-    } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Sync failed");
-    } finally {
-      setSyncing(false);
     }
   }
 
@@ -764,45 +724,12 @@ export default function DashboardPage() {
     return <DashboardSkeleton />;
   }
 
-  if (loading) {
+  if (loading || redirecting) {
     return <DashboardSkeleton />;
   }
 
-  if (needsSync || !dashboard.analysis) {
-    return (
-      <div className="mx-auto mt-20 max-w-lg">
-        <div className="card p-8 text-center">
-          <Code className="mx-auto mb-4 h-12 w-12 text-blue-500" />
-          <h2 className="mb-2 text-2xl font-bold text-gray-900 dark:text-white">
-            Connect Codeforces
-          </h2>
-          <p className="mb-6 text-gray-500 dark:text-gray-400">
-            Enter your Codeforces handle to sync your profile, submissions, and
-            contest history.
-          </p>
-          <div className="flex gap-3">
-            <input
-              type="text"
-              placeholder="Your Codeforces handle"
-              value={handle}
-              onChange={(e) => setHandle(e.target.value)}
-              className="input-field flex-1"
-              onKeyDown={(e) => e.key === "Enter" && void handleSync()}
-            />
-            <button
-              onClick={() => void handleSync()}
-              disabled={syncing}
-              className="btn-primary"
-            >
-              {syncing ? "Syncing..." : "Sync"}
-            </button>
-          </div>
-          <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
-            Prefer to manage the handle later? Update it from Settings anytime.
-          </p>
-        </div>
-      </div>
-    );
+  if (!dashboard.analysis) {
+    return <DashboardSkeleton />;
   }
 
   const { analysis, dailyPlan, review, roadmap } = dashboard;

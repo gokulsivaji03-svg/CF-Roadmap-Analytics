@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signIn, signOut, useSession } from "@/app/providers";
+import { useAuthProviders } from "@/hooks/use-auth-providers";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
@@ -37,6 +38,7 @@ const navItems = [
 export function Navbar() {
   const pathname = usePathname();
   const { data: session, status } = useSession();
+  const { hasAnyProvider, loading: providersLoading } = useAuthProviders();
   const { theme, setTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -113,7 +115,7 @@ export function Navbar() {
                   Sign out
                 </button>
               </>
-            ) : (
+            ) : hasAnyProvider ? (
               <button
                 onClick={() =>
                   signIn(undefined, { callbackUrl: "/connect-handle" })
@@ -122,7 +124,14 @@ export function Navbar() {
               >
                 Sign in
               </button>
-            )}
+            ) : !providersLoading ? (
+              <span
+                className="hidden sm:inline text-xs text-gray-500 dark:text-gray-400"
+                title="Configure OAuth env vars to enable sign-in"
+              >
+                Sign-in unavailable
+              </span>
+            ) : null}
 
             {/* Mobile menu button */}
             <button
@@ -170,7 +179,7 @@ export function Navbar() {
               >
                 Sign out
               </button>
-            ) : (
+            ) : hasAnyProvider ? (
               <button
                 onClick={() =>
                   signIn(undefined, { callbackUrl: "/connect-handle" })
@@ -179,7 +188,11 @@ export function Navbar() {
               >
                 Sign in
               </button>
-            )}
+            ) : !providersLoading ? (
+              <p className="px-3 py-2.5 text-xs text-gray-500 dark:text-gray-400">
+                Sign-in unavailable — configure OAuth env vars.
+              </p>
+            ) : null}
           </div>
         </div>
       )}
