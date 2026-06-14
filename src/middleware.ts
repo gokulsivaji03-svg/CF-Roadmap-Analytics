@@ -51,6 +51,13 @@ function isPublic(pathname: string): boolean {
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // NextAuth v4 middleware token checks are JWT-based. This app uses
+  // Prisma-backed database sessions whenever DATABASE_URL is configured,
+  // so page/API handlers must enforce auth in that mode instead.
+  if (process.env.DATABASE_URL) {
+    return NextResponse.next();
+  }
+
   // Never block public or static paths
   if (isPublic(pathname)) {
     return NextResponse.next();
