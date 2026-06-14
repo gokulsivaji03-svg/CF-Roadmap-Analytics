@@ -19,7 +19,7 @@ CF Coach is a Codeforces training workspace built with Next.js, Prisma, and Post
 
 - Auth: Google or GitHub login through NextAuth.js v4.
 - Codeforces connection: users enter their Codeforces handle in Settings, then sync via the public Codeforces API.
-- Database: Prisma with PostgreSQL (local or Neon for Vercel).
+- Database: Prisma with PostgreSQL.
 - Theme: dark mode enabled by default, with a built-in light/dark toggle.
 - External data source: live Codeforces API calls.
 
@@ -36,7 +36,7 @@ CF Coach is a Codeforces training workspace built with Next.js, Prisma, and Post
 - react-hot-toast
 - Zustand
 
-> **Database note:** The Prisma schema uses PostgreSQL. For local development, PostgreSQL is required (install via Homebrew, Postgres.app, or Docker). For Vercel production, use a hosted Postgres provider (Neon, Supabase, or Vercel Postgres).
+> **Database note:** The current Prisma schema uses PostgreSQL. Local development should use a local Postgres database. For Vercel production, use hosted Postgres if you want persistent auth and user data.
 
 ## Main sections
 
@@ -139,7 +139,6 @@ src/
     session.ts
 prisma/
   schema.prisma           Database schema
-  schema.prisma           PostgreSQL schema
 server.mjs                Standalone Jiangly finder prototype/server
 ```
 
@@ -153,18 +152,17 @@ server.mjs                Standalone Jiangly finder prototype/server
 ### 1. Install dependencies
 
 ```bash
-npm install
+npm install --legacy-peer-deps
 ```
 
 `postinstall` runs `prisma generate` automatically.
 
 ### 2. Configure environment
 
-Copy `.env.example` to `.env` and fill in the values. For local PostgreSQL:
+Copy `.env.example` to `.env` and fill in the values:
 
 ```env
 DATABASE_URL="postgresql://postgres:password@localhost:5432/cf-coach"
-DIRECT_DATABASE_URL="postgresql://postgres:password@localhost:5432/cf-coach"
 NEXTAUTH_SECRET="replace-with-a-random-secret"
 NEXTAUTH_URL="http://localhost:3000"
 GOOGLE_CLIENT_ID=""
@@ -177,13 +175,12 @@ OPENAI_API_KEY=""
 
 Notes:
 
-- `DATABASE_URL` must point to a PostgreSQL database. For Vercel, use a Neon pooled connection string.
-- `DIRECT_DATABASE_URL` — used by Prisma CLI for schema push/migrate (non-pooled). On Vercel runtime only `DATABASE_URL` (pooled) is required; keep `DIRECT_DATABASE_URL` for local CLI against prod if needed.
+- `DATABASE_URL` must point to a PostgreSQL database.
 - `NEXTAUTH_URL` must match the port the app is actually running on. Use `npm run dev -- -p 3000` to pin the port.
 - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are required to sign in with Google.
 - `GITHUB_ID` and `GITHUB_SECRET` are required to sign in with GitHub.
 - `OPENAI_API_KEY` is optional.
-- `CODEFORCES_API_KEY` and `CODEFORCES_API_SECRET` are optional placeholders only. Basic public sync works with a Codeforces handle and does not require them.
+- Basic Codeforces sync uses the public API and does not require a Codeforces API key or secret.
 
 ### OAuth callback URLs
 
@@ -223,15 +220,72 @@ npm run dev
 
 Then open `http://localhost:3000`.
 
+## Vercel deployment
+
+### Required environment variables
+
+Set these in Vercel Project Settings:
+
+- `DATABASE_URL`
+- `NEXTAUTH_SECRET`
+- `NEXTAUTH_URL`
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `GITHUB_ID`
+- `GITHUB_SECRET`
+- `OPENAI_API_KEY` optional
+
+### OAuth callback URLs
+
+Local Google:
+
+- `http://localhost:3000/api/auth/callback/google`
+
+Local GitHub:
+
+- `http://localhost:3000/api/auth/callback/github`
+
+Production Google:
+
+- `https://YOUR_DOMAIN/api/auth/callback/google`
+
+Production GitHub:
+
+- `https://YOUR_DOMAIN/api/auth/callback/github`
+
+### Recommended Vercel settings
+
+- Framework Preset: `Next.js`
+- Install Command: `npm install --legacy-peer-deps`
+- Build Command: `npm run build`
+- Output Directory: `.next`
+
+### Database note for production
+
+This app currently builds against PostgreSQL. Vercel deployments that need persistent users, sessions, Codeforces profiles, journal data, and review history should use hosted Postgres such as Neon, Supabase, or Vercel Postgres.
+
+### Common deployment errors
+
+- `Prisma schema validation ... Environment variable not found: DATABASE_URL`
+  Add `DATABASE_URL` in Vercel before deploying.
+- OAuth buttons disabled on `/`
+  Add the missing Google and/or GitHub OAuth env vars.
+- OAuth callback failure on sign-in
+  Make sure provider callback URLs exactly match your deployed domain.
+- `NEXTAUTH_SECRET` missing
+  Generate one with `openssl rand -base64 32` and add it to Vercel.
+- Auth works locally but not in production
+  Set `NEXTAUTH_URL` to your deployed origin, for example `https://your-app.vercel.app`.
+
 ## Typical workflow
 
 1. Open the app and sign in with Google or GitHub.
 2. Connect your Codeforces handle at `/connect-handle` (or from Settings).
 3. Run sync and review the dashboard and weakness analysis.
-5. Generate a daily plan.
-6. Log failed or partially solved problems in the journal.
-7. Work through the review queue over time.
-8. Use the roadmap and contest simulation pages to track progress.
+4. Generate a daily plan.
+5. Log failed or partially solved problems in the journal.
+6. Work through the review queue over time.
+7. Use the roadmap and contest simulation pages to track progress.
 
 ## API routes
 
