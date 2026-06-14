@@ -323,6 +323,15 @@ export async function fetchProblemsFromCF(
       "problemset.problems",
       params
     )
+    const solvedCountByProblem = new Map<string, number>()
+
+    for (const stat of problems.problemStatistics) {
+      if (stat.contestId == null || !stat.index) continue
+      solvedCountByProblem.set(
+        `${stat.contestId}-${stat.index}`,
+        stat.solvedCount ?? 0,
+      )
+    }
 
     return problems.problems
       .filter((p: any) => {
@@ -335,6 +344,8 @@ export async function fetchProblemsFromCF(
         name: p.name,
         rating: p.rating,
         tags: p.tags,
+        solvedCount:
+          solvedCountByProblem.get(`${p.contestId}-${p.index}`) ?? null,
         cfUrl: `https://codeforces.com/problemset/problem/${p.contestId}/${p.index}`,
       }))
   } catch {

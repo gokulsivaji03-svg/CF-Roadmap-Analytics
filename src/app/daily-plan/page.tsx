@@ -30,6 +30,7 @@ interface PlanItem {
   isCompleted: boolean;
   timeSpent: number | null;
   sortOrder: number;
+  reasonLabels?: string[];
 }
 
 interface DailyPlan {
@@ -65,6 +66,19 @@ interface DifficultyProfile {
 interface AnalysisSelectionContext {
   solvedProblemKeys?: string[];
   recentContestIds?: number[];
+}
+
+function getVisibleReasonLabels(reasonLabels?: string[]) {
+  if (!Array.isArray(reasonLabels)) return [];
+
+  return reasonLabels.filter((reason) => {
+    const normalizedReason = reason.toLowerCase();
+    return (
+      !normalizedReason.startsWith("weak tag:") &&
+      !normalizedReason.startsWith("common ") &&
+      normalizedReason !== "review reinforcement"
+    );
+  });
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────
@@ -298,71 +312,14 @@ export default function DailyPlanPage() {
   async function handleGenerate() {
     setGenerating(true);
     try {
-      // 1. Fetch analysis to get rating + weak tags
       setSyncingAnalysis(true);
-      const analysisRes = await fetch("/api/cf/analysis");
-      if (analysisRes.status === 404) {
-        setNeedsSync(true);
-        toast.error("Sync your Codeforces profile first");
-        setGenerating(false);
-        setSyncingAnalysis(false);
-        return;
-      }
-      const analysis = await analysisRes.json();
-      setSyncingAnalysis(false);
-
-      const rating: number = analysis.profile?.rating ?? 1200;
-      const weakTags: string[] =
-        analysis.tagStats
-          ?.filter((t: { accuracy: number }) => t.accuracy < 0.5)
-          .map((t: { tag: string }) => t.tag) ?? [];
-      const selectionContext: AnalysisSelectionContext =
-        analysis.selectionContext ?? {};
-      const solvedProblemKeys = new Set(
-        selectionContext.solvedProblemKeys ?? [],
-      );
-      const recentContestIds = new Set(selectionContext.recentContestIds ?? []);
-      const minContestStartTimeSeconds = getFourYearsAgoSeconds();
-
-      // 2. Fetch problems in the overall range for the selected mode
-      const profile = buildDifficultyProfile(rating, aggressiveMode);
-      const problemsRes = await fetch(
-        `/api/cf/problems?minRating=${profile.overallRange.min}&maxRating=${profile.overallRange.max}`,
-      );
-      if (!problemsRes.ok) {
-        const err = await problemsRes.json().catch(() => ({}));
-        throw new Error(
-          (err as { error?: string }).error || "Failed to fetch problems",
-        );
-      }
-      const { problems }: { problems: CfProblem[] } = await problemsRes.json();
-      if (!problems || problems.length === 0) {
-        throw new Error("No problems found in the rating range");
-      }
-      const filteredProblems = problems.filter(
-        (problem) =>
-          !solvedProblemKeys.has(getProblemKey(problem)) &&
-          !recentContestIds.has(problem.contestId) &&
-          problem.contestStartTimeSeconds != null &&
-          problem.contestStartTimeSeconds >= minContestStartTimeSeconds,
-      );
-      if (filteredProblems.length === 0) {
-        throw new Error(
-          "No unsolved recent problems found after applying the daily-plan filters",
-        );
-      }
-
-      // 3. Build plan items
-      const items = buildPlanItems(filteredProblems, weakTags, profile);
-      if (items.length < 4) {
-        throw new Error("Not enough problems found to generate the daily mix");
-      }
-
-      // 4. Save plan via POST /api/daily-plan
       const saveRes = await fetch("/api/daily-plan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items }),
+        body: JSON.stringify({
+          generate: true,
+          aggressiveMode,
+        }),
       });
       if (!saveRes.ok) {
         const err = await saveRes.json().catch(() => ({}));
@@ -372,10 +329,15 @@ export default function DailyPlanPage() {
       }
       const saved = await saveRes.json();
       setPlan(saved.plan);
+      setNeedsSync(false);
       toast.success("Today's plan generated!");
     } catch (err: any) {
+      if (err.message === "No CF profile found. Sync first.") {
+        setNeedsSync(true);
+      }
       toast.error(err.message || "Failed to generate plan");
     } finally {
+      setSyncingAnalysis(false);
       setGenerating(false);
     }
   }
@@ -642,6 +604,7 @@ export default function DailyPlanPage() {
           const isActive = !!timerIntervals[item.id];
           const elapsedSeconds = activeTimers[item.id] ?? 0;
           const totalTimeSeconds = (item.timeSpent ?? 0) + elapsedSeconds;
+          const visibleReasonLabels = getVisibleReasonLabels(item.reasonLabels);
 
           return (
             <div
@@ -686,6 +649,19 @@ export default function DailyPlanPage() {
                       {item.itemType === "review" ? "Review" : "Practice"}
                     </span>
                   </div>
+
+                  {visibleReasonLabels.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {visibleReasonLabels.map((reason) => (
+                        <span
+                          key={reason}
+                          className="rounded-full bg-gray-100 px-2.5 py-1 text-xs text-gray-600 dark:bg-gray-800 dark:text-gray-300"
+                        >
+                          {reason}
+                        </span>
+                      ))}
+                    </div>
+                  )}
 
                   {/* Action row */}
                   <div className="flex items-center gap-3 mt-3">

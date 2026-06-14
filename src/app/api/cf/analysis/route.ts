@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
 import { getAppSession } from "@/lib/session"
 import { parseStringArray } from "@/lib/serialization"
+import { getRatingBucket, getTopTagsForRating } from "@/lib/tag-frequency"
 
 const ATTEMPT_DIFFICULTY_BRACKETS = [
   { label: "800-1000", min: 800, max: 1000 },
@@ -283,6 +284,7 @@ export async function GET() {
       date: c.creationTime,
     }))
     const attemptAnalysis = buildAttemptAnalysis(profile.submissions)
+    const commonTagBucket = getRatingBucket(profile.rating)
 
     return NextResponse.json({
       profile: {
@@ -311,6 +313,14 @@ export async function GET() {
       attemptSummary: attemptAnalysis.attemptSummary,
       ratingProgression,
       mistakes: dominantMistakes,
+      commonTagSummary: commonTagBucket
+        ? {
+            rangeLabel: commonTagBucket.range_label,
+            minRating: commonTagBucket.min_rating,
+            maxRating: commonTagBucket.max_rating,
+            topTags: getTopTagsForRating(profile.rating, 10),
+          }
+        : null,
       selectionContext: {
         solvedProblemKeys,
         recentContestIds,

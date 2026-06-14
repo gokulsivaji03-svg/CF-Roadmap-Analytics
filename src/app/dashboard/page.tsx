@@ -71,6 +71,16 @@ interface AnalysisData {
     date: string;
   }[];
   mistakes: { category: string; count: number }[];
+  commonTagSummary?: {
+    rangeLabel: string;
+    minRating: number;
+    maxRating: number;
+    topTags: {
+      tag: string;
+      count: number;
+      percentage: number;
+    }[];
+  } | null;
 }
 
 interface DailyPlanItem {
@@ -869,6 +879,8 @@ export default function DashboardPage() {
         />
       </div>
 
+      <CommonTagsCard summary={analysis.commonTagSummary ?? null} />
+
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <LegacyChartCard
           title="Rating Progression"
@@ -1281,6 +1293,60 @@ function TopBlockersCard({ blockers }: { blockers: Blocker[] }) {
               </p>
               <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                 Suggested action: {blocker.suggestedAction}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CommonTagsCard({
+  summary,
+}: {
+  summary: AnalysisData["commonTagSummary"] | null;
+}) {
+  return (
+    <div className="card p-6">
+      <div className="mb-5">
+        <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
+          <Brain className="h-5 w-5 text-blue-500" />
+          Common Tags for Your Rating Range
+        </h3>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          Frequency snapshot from recent Codeforces problems in your current bucket.
+        </p>
+      </div>
+
+      {!summary || summary.topTags.length === 0 ? (
+        <EmptyCardState
+          title="No tag-frequency bucket available"
+          description="This card will populate once your current rating matches an available bucket."
+        />
+      ) : (
+        <div className="space-y-3">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Bucket: {summary.rangeLabel}
+          </p>
+          {summary.topTags.slice(0, 8).map((tag) => (
+            <div
+              key={tag.tag}
+              className="grid grid-cols-[minmax(0,1fr)_72px] items-center gap-4"
+            >
+              <div>
+                <p className="font-medium text-gray-900 dark:text-white">
+                  {tag.tag}
+                </p>
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
+                  <div
+                    className="h-full rounded-full bg-blue-500"
+                    style={{ width: `${Math.min(tag.percentage, 100)}%` }}
+                  />
+                </div>
+              </div>
+              <p className="text-right text-sm text-gray-500 dark:text-gray-400">
+                {tag.percentage.toFixed(1)}%
               </p>
             </div>
           ))}
