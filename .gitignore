@@ -7,3 +7,6 @@ dist/
 build/
 AGENTS.md
 .vercel
+
+# local database: never commit
+*.db
